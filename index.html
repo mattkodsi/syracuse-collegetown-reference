@@ -117,6 +117,15 @@ svg.zoomed .pinlabel{display:block}
 .corebound{fill:none;stroke:var(--sel);stroke-width:1.4;stroke-dasharray:6 5;opacity:.45;pointer-events:none}
 .mapanno{position:absolute;font-family:var(--mono);font-size:10px;font-weight:600;color:var(--ink-2);background:color-mix(in srgb,var(--panel) 88%,transparent);border:1px solid var(--line);border-radius:6px;padding:3px 8px;z-index:4;pointer-events:none;white-space:nowrap}
 .maphint{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:10px;color:var(--ink-3);background:color-mix(in srgb,var(--panel) 88%,transparent);border:1px solid var(--line);border-radius:20px;padding:3px 12px;z-index:4;pointer-events:none}
+.mapsearch{position:relative;background:color-mix(in srgb,var(--panel) 94%,transparent);border:1px solid var(--line);border-radius:9px;padding:4px}
+.mapsearch input{width:100%;font:inherit;font-size:12px;padding:6px 9px;border:1px solid var(--line-2);border-radius:6px;background:var(--panel);color:var(--ink)}
+.mapsearch-res{display:none;position:absolute;top:100%;left:0;right:0;margin-top:4px;background:var(--panel);border:1px solid var(--line-2);border-radius:8px;box-shadow:var(--shadow);max-height:250px;overflow-y:auto;z-index:8}
+.mapsearch-res.on{display:block}
+.msrow{padding:6px 9px;cursor:pointer;border-bottom:1px solid var(--line)}
+.msrow:last-child{border-bottom:none}
+.msrow:hover{background:var(--panel-2)}
+.msaddr{font-size:12px;font-weight:600;color:var(--ink)}
+.msown{font-size:10.5px;color:var(--ink-3);font-family:var(--mono)}
 .viewmodes{display:flex;gap:3px;background:color-mix(in srgb,var(--panel) 94%,transparent);border:1px solid var(--line);border-radius:9px;padding:4px}
 .viewmodes button{font:inherit;font-size:11.5px;padding:5px 9px;border-radius:6px;border:1px solid transparent;background:none;color:var(--ink-2);cursor:pointer;white-space:nowrap}
 .viewmodes button:hover{background:var(--panel-2);color:var(--ink)}
@@ -135,9 +144,7 @@ svg.zoomed .pinlabel{display:block}
 
 /* info panel */
 .info h3{font-size:16px;margin-bottom:2px}
-.info .kv{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;font-size:13px;margin-top:10px}
 .info .kv dt{color:var(--ink-3)}
-.info .kv dd{margin:0;text-align:right;font-variant-numeric:tabular-nums}
 .statline{display:flex;justify-content:space-between;font-size:13px;padding:3px 0;border-bottom:1px dashed var(--line)}
 .statline b{font-variant-numeric:tabular-nums}
 .hint{font-size:12px;color:var(--ink-3)}
@@ -210,6 +217,9 @@ h3.h{font-size:16px;margin:32px 0 4px;font-weight:650}
 .fchip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
 .sresult{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel);margin-bottom:8px;cursor:pointer}
 .sresult:hover{border-color:var(--line-2);background:var(--panel-2)}
+.sresult .st{font-size:13.5px;line-height:1.4}
+.sresult .meta{margin-top:5px;font-size:11.5px;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;overflow-wrap:anywhere}
+.sresult .meta .muted{min-width:0;overflow-wrap:anywhere}
 
 /* timeline */
 .tl{position:relative;margin-top:16px}
@@ -314,6 +324,13 @@ figure.chart .csrc{font-size:11px;color:var(--ink-3);margin-top:4px;line-height:
 .sharekey i{width:12px;height:12px;border-radius:3px}
 .ownbar{position:relative;background:var(--panel-2);border-radius:4px;height:15px;min-width:40px}
 .ownbar>i{position:absolute;left:0;top:0;bottom:0;border-radius:4px;opacity:.85}
+.tbar{display:flex;justify-content:flex-end;margin-bottom:8px}
+.csvbtn{font:inherit;font-size:12px;color:var(--ink-2);background:var(--panel);border:1px solid var(--line-2);border-radius:7px;padding:5px 11px;cursor:pointer}
+.csvbtn:hover{background:var(--panel-2);color:var(--ink)}
+.dtable th.sortable{cursor:pointer;user-select:none}
+.dtable th.sortable:hover{color:var(--ink)}
+.dtable th.sort-asc::after{content:" ▲";font-size:7px;color:var(--accent)}
+.dtable th.sort-desc::after{content:" ▼";font-size:7px;color:var(--accent)}
 </style>
 </head>
 <body>
@@ -398,7 +415,11 @@ function go(v){state.view=v;location.hash=v;render();}
 window.addEventListener("hashchange",()=>{const h=location.hash.replace(/^#/,"").split("=")[0];
   if(h&&h!==state.view){state.view=h;render();}});
 const SECMAP={s2:2,s3:3,s4:4,s7:7,s10:10};
-function render(){markTab();const v=$("#view");v.innerHTML="";if(state.view!=="search")window.scrollTo(0,0);
+function render(){markTab();const v=$("#view");
+  if(mapGL){try{mapGL.remove();}catch(e){}mapGL=null;}      // dispose WebGL context on nav
+  if(_glFallbackTimer){clearTimeout(_glFallbackTimer);_glFallbackTimer=null;}
+  state.sel=null;                                            // selection never crosses views
+  v.innerHTML="";if(state.view!=="search")window.scrollTo(0,0);
   if(state.view==="map")return renderMap(v);
   if(state.view==="overview")return renderOverview(v);
   if(!DATA)return renderStub(v);
@@ -438,8 +459,8 @@ const ZONE_COLORS={R1:"#c7e9b4",R2:"#a1d99b",R3:"#74c476",R4:"#41ab5d",R5:"#238b
   PID:"#6a51a3",OS:"#9ecae1",IN:"#c6c6f0",CM:"#dd3497",PDD:"#807dba",Pending:"#d9d9d9"};
 const OWNER_COLORS={su:"#e6550d",hospital:"#3182bd",government:"#756bb1",nonprofit:"#31a354",private:"#c7ccd1"};
 const OWNER_LABELS={su:"Syracuse University",hospital:"Hospital / medical",government:"Government / public",nonprofit:"Church / nonprofit",private:"Private owner"};
-const SCOPE_COLORS={national:"#d73027",nyother:"#fc8d59",local:"#91bfdb",na:"#e5e7eb"};
-const SCOPE_LABELS={national:"Out-of-state owner",nyother:"NY, outside CNY",local:"Local (CNY)",na:"Institutional / SU"};
+const SCOPE_COLORS={national:"#d73027",nyother:"#fc8d59",local:"#91bfdb",na:"#e5e7eb",unknown:"#c7ccd1"};
+const SCOPE_LABELS={national:"Out-of-state owner",nyother:"NY, outside CNY",local:"Local (CNY)",na:"Institutional / SU",unknown:"Unclassified owner"};
 const LU_COLORS={residential:"#a1d99b",multifamily:"#238b45",university:"#6a51a3",commercial:"#fd8d3c",
   institutional:"#3182bd",parking:"#969696",vacant:"#d73027",other:"#d9d9d9"};
 const LU_LABELS={residential:"1–2 family residential",multifamily:"Apartments / multi-family",university:"College / university",
@@ -489,17 +510,17 @@ function renderMap(root){
   const side=el("div",{class:"card pad info",id:"mapinfo"});
   side.appendChild(el("div",{class:"hint"},"Click any parcel for its full public record."));
   const layout=el("div",{class:"maplayout"},stage,side);
-  root.appendChild(el("div",{class:"eyebrow"},"Lens · Place"));
+  root.appendChild(el("div",{class:"eyebrow"},"Interactive map"));
   root.appendChild(el("h2",{style:"font-size:22px;margin:6px 0 4px"},"The study area, parcel by parcel"));
   root.appendChild(el("p",{class:"muted",style:"margin:0 0 14px;font-size:13px;max-width:86ch"},
-    "The four core tracts (34, 43.01, 43.02, 44.01) — Marshall St, University Hill, the University Neighborhood — over live satellite imagery. Switch the base (satellite / both / parcels), recolor by any attribute, and click a parcel for its full public record. City of Syracuse 2025 Q3 roll, 8,431 parcels. Assessed value ≠ market value (first reval in ~30 years, 2024–25)."));
+    "The four core tracts (34, 43.01, 43.02, 44.01) — Marshall St, University Hill, the University Neighborhood — over live satellite imagery. Switch the base (satellite / both / parcels), recolor by any attribute, and click a parcel for its full public record. City of Syracuse 2025 Q3 roll, "+fmtInt(PARCELS.features.length)+" parcels. Assessed value ≠ market value (first reval in ~30 years, 2024–25)."));
   root.appendChild(layout);
   if(window.maplibregl){ try{ initGLMap(stage); }catch(e){ console.error("GL map failed, SVG fallback",e); initSVGFallback(stage); } }
   else { initSVGFallback(stage); }
 }
 
 /* ---------- MapLibre map (satellite + parcels) ---------- */
-let mapGL=null;
+let mapGL=null,_glFallbackTimer=null;
 function cssVar(n){return (getComputedStyle(document.body).getPropertyValue(n)||"").trim()||"#888";}
 function matchExpr(prop,colors,fallback){const e=["match",["get",prop]];for(const k in colors)e.push(k,colors[k]);e.push(fallback);return e;}
 function fillExpr(layer){
@@ -537,7 +558,8 @@ function initGLMap(stage){
   map.on("error",e=>{try{console.warn("map:",(e&&e.error&&e.error.message)||"error");}catch(_){}});
   // Robustness: if the satellite/style is blocked or too slow, fall back to the
   // offline SVG parcel map so the user always gets a working map.
-  setTimeout(()=>{
+  _glFallbackTimer=setTimeout(()=>{
+    _glFallbackTimer=null;
     if(!_glLoaded && mapGL===map && !map.isStyleLoaded()){
       console.warn("GL map slow to load — switching to SVG fallback");
       try{map.remove();}catch(_){}
@@ -570,6 +592,7 @@ function applyViewMode(map,mode){
 }
 function addGLControls(stage,map){
   const ctrls=el("div",{class:"mapctrls"});
+  ctrls.appendChild(mapSearchBox(map));
   const vm=el("div",{class:"viewmodes"});
   [["sat","Satellite"],["both","Both"],["parcels","Parcels"]].forEach(([m,lab])=>
     vm.appendChild(el("button",{"data-m":m,title:m==="both"?"Satellite + parcels":m==="sat"?"Satellite only":"Parcels only",class:(state.mapMode||"both")===m?"on":"",onclick:()=>applyViewMode(map,m)},lab)));
@@ -577,6 +600,28 @@ function addGLControls(stage,map){
   ctrls.appendChild(colorLayerRow(id=>{map.setPaintProperty("parcels-fill","fill-color",fillExpr(id));refreshGLOverlays(stage);}));
   stage.appendChild(ctrls);
   refreshGLOverlays(stage);
+}
+function mapSearchBox(map){
+  const wrap=el("div",{class:"mapsearch"});
+  const inp=el("input",{type:"search",placeholder:"Find a parcel — address or owner…","aria-label":"Find a parcel by address or owner"});
+  const res=el("div",{class:"mapsearch-res"});
+  wrap.appendChild(inp);wrap.appendChild(res);
+  inp.addEventListener("input",()=>{
+    const q=inp.value.toLowerCase().trim();res.innerHTML="";
+    if(q.length<2){res.classList.remove("on");return;}
+    const hits=PARCELS.features.filter(f=>{const p=f.properties;return((p.addr||"")+" "+(p.owner||"")).toLowerCase().includes(q);}).slice(0,10);
+    if(!hits.length){res.classList.remove("on");return;}
+    res.classList.add("on");
+    hits.forEach(f=>{const p=f.properties;
+      res.appendChild(el("div",{class:"msrow",onclick:()=>{
+        inp.value=p.addr||p.owner||"";res.classList.remove("on");
+        if(p.lon!=null&&p.lat!=null)map.flyTo({center:[p.lon,p.lat],zoom:16.5,duration:900});
+        selectGLParcel(map,p);}},
+        el("div",{class:"msaddr"},p.addr||"(no address)"),
+        el("div",{class:"msown"},(p.owner||"")+(p.av?" · "+fmtMoney(p.av):"")))); });
+  });
+  inp.addEventListener("blur",()=>setTimeout(()=>res.classList.remove("on"),180));
+  return wrap;
 }
 function refreshGLOverlays(stage){
   const old=stage.querySelector(".legend");if(old)old.remove();
@@ -708,7 +753,7 @@ function buildLegend(){
   if(state.mapLayer==="ownerClass")items=Object.keys(OWNER_COLORS).map(k=>[OWNER_COLORS[k],OWNER_LABELS[k]]);
   else if(state.mapLayer==="ownerScope")items=Object.keys(SCOPE_COLORS).map(k=>[SCOPE_COLORS[k],SCOPE_LABELS[k]]);
   else if(state.mapLayer==="zone")items=Object.keys(ZONE_COLORS).map(k=>[ZONE_COLORS[k],k]);
-  else if(state.mapLayer==="av")items=[["#ffffcc","< $50k"],["#fed976","~$100k"],["#fd8d3c","~$500k"],["#e31a1c","~$5M"],["#800026","> $30M"]];
+  else if(state.mapLayer==="av")items=[["#e5e7eb","< $1k / n/a"],["#ffffcc","$1k–20k"],["#fed976","$20k–100k"],["#fd8d3c","$100k–500k"],["#e31a1c","$500k–3.2M"],["#800026","> $3.2M"]];
   else if(state.mapLayer==="year")items=YEAR_LEGEND;
   else if(state.mapLayer==="landuse")items=Object.keys(LU_COLORS).map(k=>[LU_COLORS[k],LU_LABELS[k]]);
   else if(state.mapLayer==="vacant")items=[["#d73027","IPS-vacant"],["#dfe3e8","occupied"]];
@@ -897,7 +942,9 @@ function factList(qf){
   return wrap;}
 function subqBlock(q,qf,related){
   const box=el("div",{class:"subq"+(related?" related":""),id:"q-"+q.id});
-  const head=el("div",{class:"qhead",onclick:()=>box.classList.toggle("closed")},
+  const toggle=()=>box.classList.toggle("closed");
+  const head=el("div",{class:"qhead",role:"button",tabindex:"0",onclick:toggle,
+    onkeydown:e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();toggle();}}},
     el("div",{class:"qtop"},
       el("span",{class:"qid"},related?"Related context":q.id),
       related?null:el("span",{class:"qbadge "+q.coverage},q.coverage),
@@ -917,7 +964,9 @@ function renderSection(root,n){
   const secFacts=DATA.facts.filter(f=>f.section===n);
   const assigned=new Set();
   const qwrap=el("div",{style:"margin-top:14px"});
-  qs.forEach(q=>{const qf=secFacts.filter(f=>f.subq===q.id||(q.factIds||[]).includes(f.id));
+  // Dedupe: a fact referenced by two subquestions renders once (under the first
+  // that claims it) — avoids duplicate DOM ids and repeated rows.
+  qs.forEach(q=>{const qf=secFacts.filter(f=>(f.subq===q.id||(q.factIds||[]).includes(f.id))&&!assigned.has(f.id));
     qf.forEach(f=>assigned.add(f.id));qwrap.appendChild(subqBlock(q,qf));});
   const other=secFacts.filter(f=>!assigned.has(f.id));
   if(other.length)qwrap.appendChild(subqBlock({id:"other",question:"Additional data related to this section — not tied to a specific guiding question.",coverage:"complete"},other,true));
@@ -971,6 +1020,45 @@ function renderImplications(root){
 }
 
 /* ---------- development roster (from the parcel roll) ---------- */
+/* sortable + exportable data tables (roster, landlords) */
+function finishTable(root,table,csvName){
+  const bar=el("div",{class:"tbar"},
+    el("button",{class:"csvbtn",title:"Download this table as CSV",onclick:()=>downloadCSV(table,csvName)},"⤓ CSV"));
+  root.appendChild(bar);
+  root.appendChild(el("div",{class:"scroller"},table));
+  enhanceTable(table);
+}
+function enhanceTable(table){
+  const ths=[...table.querySelectorAll("thead th")];
+  const tbody=table.querySelector("tbody");if(!tbody)return;
+  let sortCol=-1,asc=true;
+  const num=t=>{const m=String(t).replace(/[^0-9.\-]/g,"");return m===""||m==="-"?null:parseFloat(m);};
+  const key=(tr,ci)=>{const c=tr.children[ci];if(!c)return"";const d=c.getAttribute("data-sort");return d!=null?d:c.textContent.trim();};
+  ths.forEach((th,ci)=>{
+    if(!th.textContent.trim())return;
+    th.classList.add("sortable");th.tabIndex=0;th.setAttribute("role","button");th.title="Sort by "+th.textContent.trim();
+    const doSort=()=>{
+      asc=(sortCol===ci)?!asc:true;sortCol=ci;
+      const rows=[...tbody.querySelectorAll("tr")];
+      rows.sort((a,b)=>{const x=key(a,ci),y=key(b,ci),nx=num(x),ny=num(y);
+        let r=(nx!=null&&ny!=null)?nx-ny:String(x).localeCompare(String(y));return asc?r:-r;});
+      rows.forEach(r=>tbody.appendChild(r));
+      ths.forEach(h=>h.classList.remove("sort-asc","sort-desc"));th.classList.add(asc?"sort-asc":"sort-desc");
+    };
+    th.onclick=doSort;th.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();doSort();}};
+  });
+}
+function tableCSV(table){
+  return [...table.querySelectorAll("tr")].map(tr=>[...tr.children].map(c=>{
+    let t=(c.getAttribute("data-sort")!=null&&/^[\d.\-]+$/.test(c.getAttribute("data-sort"))?c.getAttribute("data-sort"):c.textContent).replace(/\s+/g," ").trim();
+    return /[",\n]/.test(t)?'"'+t.replace(/"/g,'""')+'"':t;}).join(",")).join("\n");
+}
+function downloadCSV(table,name){
+  const blob=new Blob([tableCSV(table)],{type:"text/csv;charset=utf-8"});
+  const url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+}
 function coreProps(){return PARCELS.features.map(f=>f.properties).filter(p=>p.core);}
 function renderRoster(root){
   vhead(root,"Real estate · Development","Recent development in the core",
@@ -992,17 +1080,17 @@ function renderRoster(root){
   recent.forEach(p=>{
     const sc=OWNER_SHORT_SCOPE[p.ownerScope]||"";
     tb.appendChild(el("tr",{},
-      el("td",{class:"yr"},p.year),
+      el("td",{class:"yr","data-sort":p.year},p.year),
       td(p.addr||"—"),
-      td(el("span",{},p.owner||"—"),ownerTagFor(p)),
+      el("td",{"data-sort":(p.owner||"").toLowerCase()},el("span",{},p.owner||"—"),ownerTagFor(p)),
       td(el("span",{class:"muted"},sc)),
-      el("td",{class:"num"},p.units?fmtInt(p.units):"—"),
-      el("td",{class:"num"},fmtMoney(p.av)),
+      el("td",{class:"num","data-sort":p.units||0},p.units?fmtInt(p.units):"—"),
+      el("td",{class:"num","data-sort":p.av||0},fmtMoney(p.av)),
       td(el("span",{class:"muted"},p.zone||"—")),
       td(el("span",{class:"muted"},p.landUse||"—"))));
   });
   t.appendChild(tb);
-  root.appendChild(el("div",{class:"scroller"},t));
+  finishTable(root,t,"syracuse-development-roster.csv");
   root.appendChild(el("p",{class:"hint",style:"margin-top:10px"},
     "Source: City of Syracuse Parcel Map (2025 Q3). One row per tax parcel; a single building can span parcels. Named projects (The Standard, Theory, Park Point, The Coda) also appear as ◆ pins on the Map lens with linked facts."));
   // named projects with fact-level detail
@@ -1082,18 +1170,18 @@ function renderLandlord(root){
   rows.forEach(([name,o])=>{
     const bw=Math.max(6,100*o.n/maxN);
     tb.appendChild(el("tr",{},
-      td(name),
+      el("td",{"data-sort":name.toLowerCase()},name),
       td(el("span",{class:"tag-own",style:"background:"+(OWNER_COLORS[o.cls]||"#999")},
         o.cls==="su"?"SU":o.cls==="private"?"PRIV":o.cls.slice(0,4).toUpperCase())),
-      td(el("span",{class:"muted"},o.cls==="private"?(OWNER_SHORT_SCOPE[o.scope]||""):"—"),
+      el("td",{},el("span",{class:"muted"},o.cls==="private"?(OWNER_SHORT_SCOPE[o.scope]||""):"—"),
         o.city?el("div",{class:"muted",style:"font-size:11px"},o.city):null),
-      el("td",{class:"num"},fmtInt(o.n)),
-      td(el("div",{class:"ownbar"},el("i",{style:"width:"+bw+"%;background:"+(OWNER_COLORS[o.cls]||"#999")}))),
-      el("td",{class:"num"},o.units?fmtInt(o.units):"—"),
-      el("td",{class:"num"},fmtMoney(o.av))));
+      el("td",{class:"num","data-sort":o.n},fmtInt(o.n)),
+      el("td",{"data-sort":o.n},el("div",{class:"ownbar"},el("i",{style:"width:"+bw+"%;background:"+(OWNER_COLORS[o.cls]||"#999")}))),
+      el("td",{class:"num","data-sort":o.units||0},o.units?fmtInt(o.units):"—"),
+      el("td",{class:"num","data-sort":o.av||0},fmtMoney(o.av))));
   });
   t.appendChild(tb);
-  root.appendChild(el("div",{class:"scroller"},t));
+  finishTable(root,t,"syracuse-core-owners.csv");
   // linked facts on named landlords / violations / tenure
   const kw=["absentee","owner-occup","code violation","rent from ben","tupper","osuchowski","landlord","rental registry"];
   const lf=DATA.facts.filter(f=>{const s=(f.statement||"").toLowerCase();return kw.some(k=>s.includes(k));})
@@ -1332,7 +1420,7 @@ const MONTHS=["","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","No
 const SEC_TITLE={2:"Planning & Zoning",3:"District Context",4:"Governance",7:"Real Estate",10:"Current Issues"};
 function dateChip(e){return e.month?MONTHS[e.month]+" "+e.year:String(e.year);}
 function renderTimeline(root){
-  vhead(root,"Lens · Time","Timeline",
+  vhead(root,"Dated events","Timeline",
     DATA.chronology.length+" dated events across the five sections. Filter by section; every write-up is shown in place. Charts and trends are on the Charts tab.");
   let secF=null;
   const chips=el("div",{class:"fchips"});
@@ -1362,7 +1450,7 @@ function renderTimeline(root){
 
 /* ---------- charts & trends (own page) ---------- */
 function renderCharts(root){
-  vhead(root,"Lens · Data","Charts & trends",
+  vhead(root,"Data series","Charts & trends",
     "Every plottable series from the research. Comparison overlays come first — related series on one set of axes — then the individual series, grouped by section. Hover any point for its date and value.");
   const comps=[...comparisonsFor(3),...comparisonsFor(7),...comparisonsFor(4),...comparisonsFor(10)];
   if(comps.length){

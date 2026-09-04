@@ -103,7 +103,7 @@ figure .csrc{font-size:11px;color:var(--ink3)}
       <div class="stats" style="margin-top:30px">
         <div class="stat"><b>48</b><span>primary sources</span></div>
         <div class="stat"><b>43</b><span>guiding questions answered</span></div>
-        <div class="stat"><b>44</b><span>audit corrections</span></div></div><div class="brand">Syracuse Precedent · M. Kodsi</div><div class="pg">18</div></section></div><div class="hint">↓ scroll or arrow keys to advance · press P then Cmd-P to print to PDF</div><script>
+        <div class="stat"><b>44</b><span>audit corrections</span></div></div><div class="brand">Syracuse Precedent · M. Kodsi</div><div class="pg">18</div></section></div><div class="hint">↓ scroll or arrow keys to advance · ⌘/Ctrl-P prints landscape → PDF</div><script>
     const slides=[...document.querySelectorAll('.slide')];let i=0;
     function go(n){i=Math.max(0,Math.min(slides.length-1,n));slides[i].scrollIntoView({behavior:'smooth'});}
     addEventListener('keydown',e=>{if(['ArrowDown','ArrowRight','PageDown',' '].includes(e.key)){e.preventDefault();go(i+1);}
