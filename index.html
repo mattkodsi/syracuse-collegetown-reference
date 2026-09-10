@@ -108,10 +108,6 @@ main{max-width:1240px;margin:0 auto;padding:22px 18px 80px}
   stroke:var(--map-bg);stroke-width:3.5px;pointer-events:none;letter-spacing:.01em}
 .streetlabel{fill:var(--ink-2);font-family:var(--sans);font-size:8px;font-weight:600;pointer-events:none;paint-order:stroke;stroke:var(--map-bg);stroke-width:2.4px;display:none}
 svg.zoomed .streetlabel{display:block}
-.pin{fill:var(--accent);stroke:#fff;stroke-width:1.4;cursor:pointer}
-.pin:hover{stroke-width:2.6}
-.pinlabel{fill:var(--ink);font-family:var(--sans);font-weight:700;font-size:9px;paint-order:stroke;stroke:var(--map-bg);stroke-width:3px;pointer-events:none;display:none}
-svg.zoomed .pinlabel{display:block}
 .parcel.ctx{opacity:.38}
 .parcel.ctx:hover{opacity:.85}
 .nb{fill:none;stroke:var(--sel);stroke-linejoin:round;pointer-events:none}
@@ -139,8 +135,6 @@ svg.noborders .nb,svg.noborders .arealabel.ctx{display:none}
 .viewmodes button{font:inherit;font-size:11.5px;padding:5px 9px;border-radius:6px;border:1px solid transparent;background:none;color:var(--ink-2);cursor:pointer;white-space:nowrap}
 .viewmodes button:hover{background:var(--panel-2);color:var(--ink)}
 .viewmodes button.on{background:var(--accent);color:#fff;font-weight:600}
-.glpin{width:15px;height:15px;border-radius:50%;background:var(--accent);border:2.5px solid #fff;box-shadow:0 1px 6px rgba(0,0,0,.5);cursor:pointer;transition:transform .1s}
-.glpin:hover{transform:scale(1.3)}
 .glarea{font-family:var(--sans);font-weight:800;font-size:12px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.95),0 0 3px rgba(0,0,0,.9);pointer-events:none;white-space:nowrap;letter-spacing:.01em}
 .mapstage .maplibregl-map{position:absolute;inset:0}
 .maplibregl-ctrl-attrib{font-size:9.5px;opacity:.85}
@@ -607,7 +601,6 @@ function initGLMap(stage){
     _glLoaded=true;
     addGLControls(stage,map);
     addGLAreaLabels(map);
-    addGLPins(map);
     map.on("click","parcels-fill",e=>{if(!(e.features&&e.features[0]))return;const props=e.features[0].properties;
       if(state.sel&&!(state.sel instanceof Element)&&state.sel.taxId===props.taxId){deselectParcel();return;}
       selectGLParcel(map,props);});
@@ -695,14 +688,6 @@ function bordersButton(){
   bb.appendChild(el("button",{class:state.borders?"on":"",title:"Show or hide neighborhood boundaries (City of Syracuse neighborhood polygons, 2017 layer)",onclick:()=>setBorders(!state.borders)},"Neighborhood borders"));
   return bb;
 }
-function addGLPins(map){
-  if(!(DATA&&DATA.places))return;
-  DATA.places.forEach(pl=>{if(pl.lat==null||pl.lon==null)return;
-    const d=el("div",{class:"glpin",title:pl.name});
-    d.addEventListener("click",ev=>{ev.stopPropagation();state.sel=null;map.setFilter("parcels-sel",["==",["get","taxId"],"__none__"]);renderPlaceInfo(pl);});
-    new maplibregl.Marker({element:d}).setLngLat([pl.lon,pl.lat]).addTo(map);
-  });
-}
 function selectGLParcel(map,props){
   const id=props.taxId;
   const clean=(PARCELS.features.find(f=>f.properties.taxId===id)||{properties:props}).properties;
@@ -725,14 +710,14 @@ function initSVGFallback(stage){
 }
 
 /* full drawMap — builds the SVG once; layer/theme changes recolor in place */
-let mapPaths=[],mapLabels=[],mapPins=[],mapSvg=null;
+let mapPaths=[],mapLabels=[],mapSvg=null;
 function drawMap(){
   const stage=$(".mapstage");if(!stage)return;
   stage.querySelectorAll("svg,.zoomctrl,.legend").forEach(n=>n.remove());
   const svg=svgEl("svg",{viewBox:`0 0 ${MAPW} ${MAPH}`,preserveAspectRatio:"xMidYMid meet"});
   mapSvg=svg;svg.classList.toggle("noborders",!state.borders);
   const g=svgEl("g",{});svg.appendChild(g);mapG=g;
-  mapPaths=[];mapLabels=[];mapPins=[];mapBorders=[];
+  mapPaths=[];mapLabels=[];mapBorders=[];
   const frag=document.createDocumentFragment();
   for(const f of PARCELS.features){const p=f.properties;
     const path=svgEl("path",{class:"parcel"+(p.core?"":" ctx"),"d":parcelPath(f),fill:colorFor(p,state.mapLayer)});
@@ -742,7 +727,6 @@ function drawMap(){
   // one delegated click for all 8k parcels (no per-path listeners)
   g.addEventListener("click",ev=>{const t=ev.target;if(t&&t.__p){ev.stopPropagation();selectParcel(t,t.__p);}});
   addAreaLabels(g);addStreetLabels(g);
-  if(DATA&&DATA.places&&DATA.places.length)addPlacePins(g);
   svg.addEventListener("click",()=>{if(state.sel){state.sel.classList.remove("sel");state.sel=null;renderInfo(null);}});
   enablePanZoom(svg);
   stage.appendChild(svg);
@@ -762,7 +746,6 @@ function applyZoom(){
   if(mapSvg)mapSvg.classList.toggle("zoomed",k>=2.1);
   // counter-scale labels + pins so they stay a constant on-screen size
   for(const L of mapLabels){L.el.setAttribute("font-size",(L.base/k).toFixed(2));L.el.setAttribute("stroke-width",(L.stroke/k).toFixed(2));}
-  for(const c of mapPins){c.setAttribute("r",(c.__r/k).toFixed(2));c.setAttribute("stroke-width",(1.4/k).toFixed(2));}
   for(const b of mapBorders)b.el.setAttribute("stroke-width",(b.base/k).toFixed(2));
 }
 function selectParcel(path,p){if(state.sel===path){deselectParcel();return;}if(state.sel instanceof Element)state.sel.classList.remove("sel");state.sel=path;path.classList.add("sel");renderInfo(p);}
@@ -883,30 +866,6 @@ function addStreetLabels(g){
   for(const [s,a] of big){const x=projX(a.x/a.n),y=projY(a.y/a.n);
     const el=svgEl("text",{class:"streetlabel",x:x,y:y,"font-size":8,"text-anchor":"middle"});
     el.textContent=s;g.appendChild(el);mapLabels.push({el,base:8,stroke:2.4});}
-}
-function addPlacePins(g){
-  for(const pl of DATA.places){
-    if(pl.lat==null||pl.lon==null)continue;
-    const x=projX(pl.lon),y=projY(pl.lat);
-    const c=svgEl("circle",{class:"pin",cx:x,cy:y,r:4.6});c.__r=4.6;
-    const ti=svgEl("title");ti.textContent=pl.name;c.appendChild(ti);
-    c.addEventListener("click",ev=>{ev.stopPropagation();if(state.sel){state.sel.classList.remove("sel");state.sel=null;}renderPlaceInfo(pl);});
-    g.appendChild(c);mapPins.push(c);
-    const lb=svgEl("text",{class:"pinlabel",x:x+6,y:y+3,"font-size":9});lb.textContent=pl.name;
-    g.appendChild(lb);mapLabels.push({el:lb,base:9,stroke:3});
-  }
-}
-function renderPlaceInfo(pl){const box=$("#mapinfo");if(!box)return;box.innerHTML="";
-  box.appendChild(el("div",{class:"eyebrow"},"Key site"));
-  box.appendChild(el("h3",{style:"margin:4px 0 3px"},pl.name));
-  if(pl.note)box.appendChild(el("div",{class:"muted",style:"font-size:12.5px;line-height:1.45"},pl.note));
-  const fs=(pl.factIds||[]).map(id=>DATA.facts.find(f=>f.id===id)).filter(Boolean);
-  if(fs.length){box.appendChild(el("div",{class:"flabel",style:"margin-top:12px"},"Related facts · "+fs.length));
-    fs.forEach(f=>box.appendChild(el("div",{class:"statline"},
-      el("span",{style:"flex:1;padding-right:8px"},f.statement),f.value?el("b",{},String(f.value)):null)));}
-  if(pl.sections&&pl.sections.length)box.appendChild(el("div",{style:"margin-top:12px"},
-    el("a",{href:"#",onclick:e=>{e.preventDefault();go("s"+pl.sections[0]);}},"Open §"+pl.sections[0]+" →")));
-  box.appendChild(el("div",{class:"hint",style:"margin-top:10px"},"Click a parcel for its record, or another ◆ pin."));
 }
 
 /* ---------- overview (partial until data.js lands) ---------- */
