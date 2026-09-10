@@ -114,6 +114,13 @@ svg.zoomed .streetlabel{display:block}
 svg.zoomed .pinlabel{display:block}
 .parcel.ctx{opacity:.38}
 .parcel.ctx:hover{opacity:.85}
+.nb{fill:none;stroke:var(--sel);stroke-linejoin:round;pointer-events:none}
+.nb.core{stroke-opacity:.9}
+.nb.ctx{stroke-opacity:.5}
+.arealabel.ctx{font-weight:700;opacity:.8}
+svg.noborders .nb,svg.noborders .arealabel.ctx{display:none}
+.glarea.ctx{font-size:10.5px;font-weight:700;opacity:.9}
+.glarea.hide{display:none}
 .btn-clear{float:right;margin:0 0 6px 10px;font:inherit;font-size:12px;line-height:1.2;padding:4px 9px;border:1px solid rgba(120,130,140,.45);border-radius:7px;background:transparent;color:inherit;opacity:.75;cursor:pointer}
 .btn-clear:hover{opacity:1;border-color:var(--sel);color:var(--sel)}
 .corebound{fill:none;stroke:var(--sel);stroke-width:1.4;stroke-dasharray:6 5;opacity:.45;pointer-events:none}
@@ -346,6 +353,7 @@ figure.chart .csrc{font-size:11px;color:var(--ink-3);margin-top:4px;line-height:
 <main id="view"></main>
 
 <script src="data/parcels.js"></script>
+<script src="data/nhoods.js"></script>
 <script src="data/data.js"></script>
 <script>
 "use strict";
@@ -407,7 +415,8 @@ function markTab(){const v=REG_ALIAS[state.view]||state.view;
   document.querySelectorAll("nav .tab").forEach(b=>b.classList.toggle("on",b.dataset.go===v));}
 
 /* ---------- router ---------- */
-const state={view:"map",mapLayer:"ownerClass",sel:null};
+const state={view:"map",mapLayer:"ownerClass",sel:null,borders:(()=>{try{return localStorage.getItem("syr-borders")!=="off";}catch(e){return true;}})()};
+let mapBorders=[];
 function go(v){state.view=v;location.hash=v;render();}
 window.addEventListener("hashchange",()=>{const h=location.hash.replace(/^#/,"").split("=")[0];
   if(h&&h!==state.view){state.view=h;render();}});
@@ -511,7 +520,7 @@ function renderMap(root){
   root.appendChild(el("div",{class:"eyebrow"},"Interactive map"));
   root.appendChild(el("h2",{style:"font-size:22px;margin:6px 0 4px"},"The study area, parcel by parcel"));
   root.appendChild(el("p",{class:"muted",style:"margin:0 0 14px;font-size:13px;max-width:86ch"},
-    "The three core neighborhoods — University Hill, the University Neighborhood and Westcott (City of Syracuse neighborhood polygons, "+fmtInt(PARCELS.features.filter(f=>f.properties.core).length)+" parcels) — shown vivid over live satellite imagery, with surrounding parcels dimmed for context. Switch the base (satellite / both / parcels), recolor by any attribute, and click a parcel for its full public record. City of Syracuse 2025 Q3 roll, "+fmtInt(PARCELS.features.length)+" parcels in all. Assessed value ≠ market value (first reval in ~30 years, 2024–25)."));
+    "The three core neighborhoods — University Hill, the University Neighborhood and Westcott (City of Syracuse neighborhood polygons, "+fmtInt(PARCELS.features.filter(f=>f.properties.core).length)+" parcels) — shown vivid over live satellite imagery, with surrounding parcels dimmed for context and neighborhood outlines from the City\u2019s 2017 neighborhood layer (switch them off with the Neighborhood borders button). Switch the base (satellite / both / parcels), recolor by any attribute, and click a parcel for its full public record. City of Syracuse 2025 Q3 roll, "+fmtInt(PARCELS.features.length)+" parcels in all. Assessed value ≠ market value (first reval in ~30 years, 2024–25)."));
   root.appendChild(layout);
   if(window.maplibregl){ try{ initGLMap(stage); }catch(e){ console.error("GL map failed, SVG fallback",e); initSVGFallback(stage); } }
   else { initSVGFallback(stage); }
@@ -555,12 +564,17 @@ function initGLMap(stage){
     container:stage,
     style:{version:8,sources:{
         sat:{type:"raster",tiles:["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"],tileSize:256,maxzoom:19,attribution:'Imagery © Esri, Maxar, Earthstar Geographics'},
-        parcels:{type:"geojson",data:PARCELS,promoteId:"taxId"}},
+        parcels:{type:"geojson",data:PARCELS,promoteId:"taxId"},
+        nhoods:{type:"geojson",data:(window.NHOODS||{type:"FeatureCollection",features:[]})}},
       layers:[
         {id:"bg",type:"background",paint:{"background-color":cssVar("--map-bg")}},
         {id:"sat",type:"raster",source:"sat"},
         {id:"parcels-fill",type:"fill",source:"parcels",paint:{"fill-color":fillExpr(state.mapLayer),"fill-opacity":fillOpacityExpr(0.62,0.34)}},
         {id:"parcels-line",type:"line",source:"parcels",paint:{"line-color":"rgba(90,100,110,.45)","line-width":["interpolate",["linear"],["zoom"],13,0.15,16,0.6]}},
+        {id:"nb-case-ctx",type:"line",source:"nhoods",filter:["==",["get","core"],0],layout:{"line-join":"round","visibility":state.borders?"visible":"none"},paint:{"line-color":cssVar("--panel"),"line-opacity":.55,"line-width":["interpolate",["linear"],["zoom"],12,2.2,16,3.4]}},
+        {id:"nb-line-ctx",type:"line",source:"nhoods",filter:["==",["get","core"],0],layout:{"line-join":"round","visibility":state.borders?"visible":"none"},paint:{"line-color":cssVar("--sel"),"line-opacity":.55,"line-width":["interpolate",["linear"],["zoom"],12,0.8,16,1.4]}},
+        {id:"nb-case-core",type:"line",source:"nhoods",filter:["==",["get","core"],1],layout:{"line-join":"round","visibility":state.borders?"visible":"none"},paint:{"line-color":cssVar("--panel"),"line-opacity":.8,"line-width":["interpolate",["linear"],["zoom"],12,3.2,16,5]}},
+        {id:"nb-line-core",type:"line",source:"nhoods",filter:["==",["get","core"],1],layout:{"line-join":"round","visibility":state.borders?"visible":"none"},paint:{"line-color":cssVar("--sel"),"line-opacity":.95,"line-width":["interpolate",["linear"],["zoom"],12,1.4,16,2.4]}},
         {id:"parcels-sel",type:"line",source:"parcels",paint:{"line-color":cssVar("--sel"),"line-width":2.6},filter:["==",["get","taxId"],"__none__"]}
       ]},
     center:[-76.1335,43.0425],zoom:13.5,minzoom:11,maxzoom:18,
@@ -613,6 +627,7 @@ function addGLControls(stage,map){
   [["sat","Satellite"],["both","Both"],["parcels","Parcels"]].forEach(([m,lab])=>
     vm.appendChild(el("button",{"data-m":m,title:m==="both"?"Satellite + parcels":m==="sat"?"Satellite only":"Parcels only",class:(state.mapMode||"both")===m?"on":"",onclick:()=>applyViewMode(map,m)},lab)));
   ctrls.appendChild(vm);
+  ctrls.appendChild(bordersButton());
   ctrls.appendChild(colorLayerRow(id=>{map.setPaintProperty("parcels-fill","fill-color",fillExpr(id));refreshGLOverlays(stage);}));
   stage.appendChild(ctrls);
   refreshGLOverlays(stage);
@@ -645,12 +660,31 @@ function refreshGLOverlays(stage){
   if(!state.sel)renderInfo(null);
 }
 function addGLAreaLabels(map){
-  const acc={};
+  if(window.NHOODS&&NHOODS.features.length){
+    for(const f of NHOODS.features){const p=f.properties;
+      const d=el("div",{class:"glarea"+(p.core?"":" ctx"+(state.borders?"":" hide"))},AREA_NAMES[p.name]||p.name);
+      new maplibregl.Marker({element:d}).setLngLat(p.center).addTo(map);}
+    return;
+  }
+  const acc={};   // fallback: centre of each core area's parcels
   for(const f of PARCELS.features){const p=f.properties;if(!p.core||!p.nhood||p.lat==null||p.lon==null)continue;
     (acc[p.nhood]=acc[p.nhood]||{x:0,y:0,n:0});acc[p.nhood].x+=p.lon;acc[p.nhood].y+=p.lat;acc[p.nhood].n++;}
   for(const t in acc){const a=acc[t];
     const d=el("div",{class:"glarea"},AREA_NAMES[t]||t);
     new maplibregl.Marker({element:d}).setLngLat([a.x/a.n,a.y/a.n]).addTo(map);}
+}
+// Neighborhood borders on/off (both maps); remembered between visits.
+function setBorders(on){
+  state.borders=!!on;try{localStorage.setItem("syr-borders",on?"on":"off");}catch(e){}
+  if(mapGL){["nb-case-ctx","nb-line-ctx","nb-case-core","nb-line-core"].forEach(id=>{try{mapGL.setLayoutProperty(id,"visibility",on?"visible":"none");}catch(e){}});}
+  document.querySelectorAll(".glarea.ctx").forEach(d=>d.classList.toggle("hide",!on));
+  if(mapSvg)mapSvg.classList.toggle("noborders",!on);
+  document.querySelectorAll(".bordersbtn button").forEach(b=>b.classList.toggle("on",!!on));
+}
+function bordersButton(){
+  const bb=el("div",{class:"viewmodes bordersbtn"});
+  bb.appendChild(el("button",{class:state.borders?"on":"",title:"Show or hide neighborhood boundaries (City of Syracuse neighborhood polygons, 2017 layer)",onclick:()=>setBorders(!state.borders)},"Neighborhood borders"));
+  return bb;
 }
 function addGLPins(map){
   if(!(DATA&&DATA.places))return;
@@ -667,13 +701,15 @@ function selectGLParcel(map,props){
   map.setFilter("parcels-sel",["==",["get","taxId"],id!=null?id:"__none__"]);
   renderInfo(clean);
 }
-function refreshGLTheme(){if(!mapGL)return;try{mapGL.setPaintProperty("bg","background-color",cssVar("--map-bg"));mapGL.setPaintProperty("parcels-sel","line-color",cssVar("--sel"));}catch(e){}}
+function refreshGLTheme(){if(!mapGL)return;try{mapGL.setPaintProperty("bg","background-color",cssVar("--map-bg"));mapGL.setPaintProperty("parcels-sel","line-color",cssVar("--sel"));
+  ["nb-line-core","nb-line-ctx"].forEach(id=>mapGL.setPaintProperty(id,"line-color",cssVar("--sel")));["nb-case-core","nb-case-ctx"].forEach(id=>mapGL.setPaintProperty(id,"line-color",cssVar("--panel")));}catch(e){}}
 
 /* ---------- SVG map (offline fallback) ---------- */
 function initSVGFallback(stage){
   if(!PROJ)setupProjection();
   const ctrls=el("div",{class:"mapctrls"});
   ctrls.appendChild(colorLayerRow(()=>recolorMap()));
+  ctrls.appendChild(bordersButton());
   stage.appendChild(ctrls);
   stage.appendChild(el("div",{class:"maphint"},"⌘/Ctrl-scroll or +/− to zoom · drag to pan · zoom in for labels"));
   drawMap();
@@ -685,14 +721,15 @@ function drawMap(){
   const stage=$(".mapstage");if(!stage)return;
   stage.querySelectorAll("svg,.zoomctrl,.legend").forEach(n=>n.remove());
   const svg=svgEl("svg",{viewBox:`0 0 ${MAPW} ${MAPH}`,preserveAspectRatio:"xMidYMid meet"});
-  mapSvg=svg;
+  mapSvg=svg;svg.classList.toggle("noborders",!state.borders);
   const g=svgEl("g",{});svg.appendChild(g);mapG=g;
-  mapPaths=[];mapLabels=[];mapPins=[];
+  mapPaths=[];mapLabels=[];mapPins=[];mapBorders=[];
   const frag=document.createDocumentFragment();
   for(const f of PARCELS.features){const p=f.properties;
     const path=svgEl("path",{class:"parcel"+(p.core?"":" ctx"),"d":parcelPath(f),fill:colorFor(p,state.mapLayer)});
     path.__p=p;frag.appendChild(path);mapPaths.push(path);}
   g.appendChild(frag);
+  addNhoodBorders(g);
   // one delegated click for all 8k parcels (no per-path listeners)
   g.addEventListener("click",ev=>{const t=ev.target;if(t&&t.__p){ev.stopPropagation();selectParcel(t,t.__p);}});
   addAreaLabels(g);addStreetLabels(g);
@@ -717,6 +754,7 @@ function applyZoom(){
   // counter-scale labels + pins so they stay a constant on-screen size
   for(const L of mapLabels){L.el.setAttribute("font-size",(L.base/k).toFixed(2));L.el.setAttribute("stroke-width",(L.stroke/k).toFixed(2));}
   for(const c of mapPins){c.setAttribute("r",(c.__r/k).toFixed(2));c.setAttribute("stroke-width",(1.4/k).toFixed(2));}
+  for(const b of mapBorders)b.el.setAttribute("stroke-width",(b.base/k).toFixed(2));
 }
 function selectParcel(path,p){if(state.sel===path){deselectParcel();return;}if(state.sel instanceof Element)state.sel.classList.remove("sel");state.sel=path;path.classList.add("sel");renderInfo(p);}
 function renderInfo(p){const box=$("#mapinfo");if(!box)return;box.innerHTML="";
@@ -802,8 +840,25 @@ function enablePanZoom(svg){
 }
 // Core areas = City of Syracuse neighborhood polygons (parcel NHOOD field), matching the study boundary.
 const AREA_NAMES={"University Hill":"University Hill","University Neighborhood":"University Neighborhood","Westcott":"Westcott"};
+function nhoodPath(geom){
+  const rings=geom.type==="Polygon"?geom.coordinates:geom.coordinates.flat();let d="";
+  for(const r of rings){r.forEach((p,i)=>{d+=(i?"L":"M")+projX(p[0]).toFixed(1)+" "+projY(p[1]).toFixed(1);});d+="Z";}
+  return d;
+}
+function addNhoodBorders(g){
+  if(!(window.NHOODS&&NHOODS.features.length))return;
+  for(const f of NHOODS.features){const p=f.properties;
+    const path=svgEl("path",{class:"nb "+(p.core?"core":"ctx"),"d":nhoodPath(f.geometry)});
+    g.appendChild(path);mapBorders.push({el:path,base:p.core?1.7:0.9});}
+}
 function addAreaLabels(g){
-  const acc={};
+  if(window.NHOODS&&NHOODS.features.length){
+    for(const f of NHOODS.features){const p=f.properties;const x=projX(p.center[0]),y=projY(p.center[1]);const base=p.core?13:9.5;
+      const t=svgEl("text",{class:"arealabel"+(p.core?"":" ctx"),x:x,y:y,"font-size":base,"text-anchor":"middle"});
+      t.textContent=AREA_NAMES[p.name]||p.name;g.appendChild(t);mapLabels.push({el:t,base:base,stroke:p.core?3.5:2.6});}
+    return;
+  }
+  const acc={};   // fallback: centre of each core area's parcels
   for(const f of PARCELS.features){const p=f.properties;if(!p.core||!p.nhood||p.lat==null||p.lon==null)continue;
     (acc[p.nhood]=acc[p.nhood]||{x:0,y:0,n:0});acc[p.nhood].x+=p.lon;acc[p.nhood].y+=p.lat;acc[p.nhood].n++;}
   for(const t in acc){const a=acc[t];const x=projX(a.x/a.n),y=projY(a.y/a.n);

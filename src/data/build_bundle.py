@@ -11,7 +11,7 @@ os.makedirs(os.path.join(ROOT, "dist"), exist_ok=True)
 OUT = os.path.join(ROOT, "dist", "Syracuse-Reference.html")
 
 html = open(SRC, encoding="utf-8").read()
-for rel in ("data/parcels.js", "data/data.js"):
+for rel in ("data/parcels.js", "data/nhoods.js", "data/data.js"):
     js = open(os.path.join(ROOT, rel), encoding="utf-8").read()
     tag = f'<script src="{rel}"></script>'
     assert tag in html, f"tag not found: {tag}"

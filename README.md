@@ -12,8 +12,8 @@ This repository publishes the team-facing reading edition. Working records and t
 
 ## Source and rebuild (reference map)
 
-The reference map's source is in `src/`: `syracuse-reference.html` (the app) and `data/` (`build_parcels.py` pulls the City of Syracuse 2025 Q3 parcel roll and tags the three core neighborhoods — University Hill, University Neighborhood and Westcott — by the roll's NHOOD field; `build_bundle.py` inlines the data into one self-contained file). Rebuild and republish:
+The reference map's source is in `src/`: `syracuse-reference.html` (the app) and `data/` (`build_parcels.py` pulls the City of Syracuse 2025 Q3 parcel roll and tags the three core neighborhoods — University Hill, University Neighborhood and Westcott — by the roll's NHOOD field; `build_nhoods.py` pulls the City's Syracuse Neighborhoods 2017 polygons for the outlines and computes each label point; `build_bundle.py` inlines the data into one self-contained file). Rebuild and republish:
 
 ```
-cd src/data && python3 build_parcels.py --refresh && python3 build_bundle.py && cp ../dist/Syracuse-Reference.html ../../index.html
+cd src/data && python3 build_parcels.py --refresh && python3 build_nhoods.py --refresh && python3 build_bundle.py && cp ../dist/Syracuse-Reference.html ../../index.html
 ```
