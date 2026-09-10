@@ -1,0 +1,1571 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Syracuse College-Town Reference</title>
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<style>
+/* ---------- tokens ---------- */
+:root{
+  --bg:#f6f7f9; --panel:#ffffff; --panel-2:#f0f2f5; --ink:#16191d; --ink-2:#4a5159;
+  --ink-3:#7b838c; --line:#e2e6eb; --line-2:#cdd3da; --accent:#3b5bdb; --accent-ink:#2942a8;
+  --map-bg:#eef1f4; --map-stroke:rgba(90,100,110,.30); --sel:#111418;
+  --v:#2f9e54; --r:#c9871f; --e:#7a8290; --gap:#c0392b;
+  --shadow:0 1px 2px rgba(16,20,26,.06),0 4px 16px rgba(16,20,26,.06);
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --serif:"Iowan Old Style","Charter",Georgia,"Times New Roman",serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#101317; --panel:#171b21; --panel-2:#1e242c; --ink:#e9edf1; --ink-2:#b3bcc6;
+  --ink-3:#7e8892; --line:#242b34; --line-2:#333c47; --accent:#7d97ff; --accent-ink:#a9bcff;
+  --map-bg:#141a21; --map-stroke:rgba(150,163,176,.22); --sel:#f4f7fa;
+  --v:#4cc47b; --r:#e0a63f; --e:#8892a0; --gap:#e5695b;
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 6px 22px rgba(0,0,0,.35);
+}}
+:root[data-theme="dark"]{
+  --bg:#101317; --panel:#171b21; --panel-2:#1e242c; --ink:#e9edf1; --ink-2:#b3bcc6;
+  --ink-3:#7e8892; --line:#242b34; --line-2:#333c47; --accent:#7d97ff; --accent-ink:#a9bcff;
+  --map-bg:#141a21; --map-stroke:rgba(150,163,176,.22); --sel:#f4f7fa;
+  --v:#4cc47b; --r:#e0a63f; --e:#8892a0; --gap:#e5695b;
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 6px 22px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+h1,h2,h3{line-height:1.15;margin:0;text-wrap:balance}
+.mono{font-family:var(--mono)}
+.tnum{font-variant-numeric:tabular-nums}
+
+/* ---------- nav ---------- */
+header.nav{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--bg) 92%,transparent);
+  backdrop-filter:blur(10px);border-bottom:1px solid var(--line);display:flex;align-items:center;
+  gap:12px;padding:0 14px;height:54px}
+.brand{font-weight:650;letter-spacing:-.01em;display:flex;align-items:center;gap:8px;white-space:nowrap;flex:none}
+.brand b{font-weight:700}
+.brand .dot{width:9px;height:9px;border-radius:50%;background:var(--accent)}
+nav#tabs{display:flex;gap:2px;overflow-x:auto;flex:1;height:100%;align-items:center;scrollbar-width:none;-ms-overflow-style:none}
+nav#tabs::-webkit-scrollbar{display:none}
+.navsep{width:1px;height:18px;background:var(--line-2);flex:none;margin:0 5px;opacity:.7}
+nav button.tab{font:inherit;font-size:12.5px;color:var(--ink-2);background:none;border:1px solid transparent;
+  padding:6px 9px;border-radius:8px;cursor:pointer;white-space:nowrap;flex:none}
+nav button.tab:hover{background:var(--panel-2);color:var(--ink)}
+nav button.tab.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.nav-sp{display:none}
+.icon-btn{font:inherit;font-size:14px;color:var(--ink-2);background:none;border:1px solid var(--line-2);
+  padding:6px 10px;border-radius:8px;cursor:pointer;flex:none}
+.icon-btn:hover{background:var(--panel-2);color:var(--ink)}
+/* anchored blocks clear the sticky nav */
+[id^="q-"],[id^="f-"]{scroll-margin-top:66px}
+
+/* ---------- layout ---------- */
+main{max-width:1240px;margin:0 auto;padding:22px 18px 80px}
+.wrap-narrow{max-width:820px}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+.muted{color:var(--ink-3)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}
+.pad{padding:16px 18px}
+
+/* chips */
+.chip{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10.5px;font-weight:600;
+  letter-spacing:.02em;padding:2px 6px;border-radius:5px;border:1px solid transparent;vertical-align:middle}
+.chip.v{color:#fff;background:var(--v)} .chip.r{color:#1a1205;background:var(--r)}
+.chip.e{color:#fff;background:var(--e)} .chip.gap{color:var(--gap);border-color:var(--gap);background:transparent}
+
+/* ---------- map ---------- */
+.maplayout{display:grid;grid-template-columns:1fr 320px;gap:16px;align-items:start}
+@media(max-width:900px){.maplayout{grid-template-columns:1fr}}
+.mapstage{position:relative;background:var(--map-bg);border:1px solid var(--line);border-radius:12px;
+  overflow:hidden;box-shadow:var(--shadow);height:clamp(420px,66vh,700px)}
+.mapstage svg{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.mapstage svg.drag{cursor:grabbing}
+@media(max-width:900px){.mapstage{height:clamp(360px,52vh,520px)}}
+.mapctrls{position:absolute;top:10px;left:10px;display:flex;flex-direction:column;gap:6px;z-index:5;max-width:250px}
+.layerrow{display:flex;gap:4px;flex-wrap:wrap;background:color-mix(in srgb,var(--panel) 92%,transparent);
+  border:1px solid var(--line);border-radius:9px;padding:5px}
+.layerrow button{font:inherit;font-size:11.5px;padding:4px 8px;border-radius:6px;border:1px solid transparent;
+  background:none;color:var(--ink-2);cursor:pointer}
+.layerrow button:hover{background:var(--panel-2);color:var(--ink)}
+.layerrow button.on{background:var(--accent);color:#fff}
+.zoomctrl{position:absolute;bottom:10px;right:10px;display:flex;flex-direction:column;gap:4px;z-index:5}
+.zoomctrl button{width:30px;height:30px;font-size:17px;border-radius:7px;border:1px solid var(--line-2);
+  background:var(--panel);color:var(--ink);cursor:pointer;line-height:1}
+.legend{background:color-mix(in srgb,var(--panel) 92%,transparent);border:1px solid var(--line);
+  border-radius:9px;padding:8px 10px;font-size:11.5px;position:absolute;bottom:10px;left:10px;z-index:5;max-width:250px}
+.legend .lg-row{display:flex;align-items:center;gap:6px;margin:2px 0}
+.legend .sw{width:12px;height:12px;border-radius:3px;flex:none;border:1px solid var(--map-stroke)}
+.legend .lg-title{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-bottom:4px}
+.parcel{stroke:var(--map-stroke);stroke-width:.4;transition:opacity .1s}
+.parcel:hover{stroke:var(--sel);stroke-width:1.1}
+.parcel.sel{stroke:var(--sel);stroke-width:1.6}
+.arealabel{fill:var(--ink);font-family:var(--sans);font-weight:800;paint-order:stroke;
+  stroke:var(--map-bg);stroke-width:3.5px;pointer-events:none;letter-spacing:.01em}
+.streetlabel{fill:var(--ink-2);font-family:var(--sans);font-size:8px;font-weight:600;pointer-events:none;paint-order:stroke;stroke:var(--map-bg);stroke-width:2.4px;display:none}
+svg.zoomed .streetlabel{display:block}
+.pin{fill:var(--accent);stroke:#fff;stroke-width:1.4;cursor:pointer}
+.pin:hover{stroke-width:2.6}
+.pinlabel{fill:var(--ink);font-family:var(--sans);font-weight:700;font-size:9px;paint-order:stroke;stroke:var(--map-bg);stroke-width:3px;pointer-events:none;display:none}
+svg.zoomed .pinlabel{display:block}
+.parcel.ctx{opacity:.38}
+.parcel.ctx:hover{opacity:.85}
+.btn-clear{float:right;margin:0 0 6px 10px;font:inherit;font-size:12px;line-height:1.2;padding:4px 9px;border:1px solid rgba(120,130,140,.45);border-radius:7px;background:transparent;color:inherit;opacity:.75;cursor:pointer}
+.btn-clear:hover{opacity:1;border-color:var(--sel);color:var(--sel)}
+.corebound{fill:none;stroke:var(--sel);stroke-width:1.4;stroke-dasharray:6 5;opacity:.45;pointer-events:none}
+.mapanno{position:absolute;font-family:var(--mono);font-size:10px;font-weight:600;color:var(--ink-2);background:color-mix(in srgb,var(--panel) 88%,transparent);border:1px solid var(--line);border-radius:6px;padding:3px 8px;z-index:4;pointer-events:none;white-space:nowrap}
+.maphint{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:10px;color:var(--ink-3);background:color-mix(in srgb,var(--panel) 88%,transparent);border:1px solid var(--line);border-radius:20px;padding:3px 12px;z-index:4;pointer-events:none}
+.mapsearch{position:relative;background:color-mix(in srgb,var(--panel) 94%,transparent);border:1px solid var(--line);border-radius:9px;padding:4px}
+.mapsearch input{width:100%;font:inherit;font-size:12px;padding:6px 9px;border:1px solid var(--line-2);border-radius:6px;background:var(--panel);color:var(--ink)}
+.mapsearch-res{display:none;position:absolute;top:100%;left:0;right:0;margin-top:4px;background:var(--panel);border:1px solid var(--line-2);border-radius:8px;box-shadow:var(--shadow);max-height:250px;overflow-y:auto;z-index:8}
+.mapsearch-res.on{display:block}
+.msrow{padding:6px 9px;cursor:pointer;border-bottom:1px solid var(--line)}
+.msrow:last-child{border-bottom:none}
+.msrow:hover{background:var(--panel-2)}
+.msaddr{font-size:12px;font-weight:600;color:var(--ink)}
+.msown{font-size:10.5px;color:var(--ink-3);font-family:var(--mono)}
+.viewmodes{display:flex;gap:3px;background:color-mix(in srgb,var(--panel) 94%,transparent);border:1px solid var(--line);border-radius:9px;padding:4px}
+.viewmodes button{font:inherit;font-size:11.5px;padding:5px 9px;border-radius:6px;border:1px solid transparent;background:none;color:var(--ink-2);cursor:pointer;white-space:nowrap}
+.viewmodes button:hover{background:var(--panel-2);color:var(--ink)}
+.viewmodes button.on{background:var(--accent);color:#fff;font-weight:600}
+.glpin{width:15px;height:15px;border-radius:50%;background:var(--accent);border:2.5px solid #fff;box-shadow:0 1px 6px rgba(0,0,0,.5);cursor:pointer;transition:transform .1s}
+.glpin:hover{transform:scale(1.3)}
+.glarea{font-family:var(--sans);font-weight:800;font-size:12px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.95),0 0 3px rgba(0,0,0,.9);pointer-events:none;white-space:nowrap;letter-spacing:.01em}
+.mapstage .maplibregl-map{position:absolute;inset:0}
+.maplibregl-ctrl-attrib{font-size:9.5px;opacity:.85}
+.maplibregl-popup{display:none}
+.maplibregl-ctrl-group button{width:30px;height:30px}
+.info .kv{display:grid;grid-template-columns:96px 1fr;gap:3px 12px;font-size:12.5px;margin-top:4px}
+.info .kv dd{text-align:left;margin:0;word-break:break-word}
+.info .kvgroup{margin-top:13px}
+.info .kvglabel{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:4px}
+
+/* info panel */
+.info h3{font-size:16px;margin-bottom:2px}
+.info .kv dt{color:var(--ink-3)}
+.statline{display:flex;justify-content:space-between;font-size:13px;padding:3px 0;border-bottom:1px dashed var(--line)}
+.statline b{font-variant-numeric:tabular-nums}
+.hint{font-size:12px;color:var(--ink-3)}
+
+/* stub / overview */
+.grid-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.stub{border:1px dashed var(--line-2);border-radius:12px;padding:26px;color:var(--ink-3);text-align:center}
+.glance{display:flex;gap:22px;flex-wrap:wrap;padding:14px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin:16px 0}
+.glance .g{display:flex;flex-direction:column}
+.glance .g b{font-size:22px;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.glance .g span{font-size:11px;color:var(--ink-3);font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase}
+
+/* clickable vs static: interactive things lift + glow; info panels stay flat */
+.clickable{cursor:pointer;transition:transform .08s ease,border-color .12s,box-shadow .12s}
+.clickable:hover{transform:translateY(-1px);border-color:var(--accent)}
+.card-arrow{color:var(--accent);font-weight:700}
+
+/* section lens */
+.covbar{display:flex;gap:8px;align-items:center;font-size:12px;font-family:var(--mono);flex-wrap:wrap;margin-top:4px}
+.covpill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:20px;border:1px solid var(--line-2)}
+.covpill .d{width:8px;height:8px;border-radius:50%}
+.cov-complete{background:var(--v)} .cov-partial{background:var(--r)} .cov-gap{background:var(--gap)}
+.subq{border:1px solid var(--line);border-radius:12px;background:var(--panel);box-shadow:var(--shadow);margin:14px 0;overflow:hidden}
+.subq.related{background:var(--panel-2);border-style:dashed}
+.qhead{padding:14px 18px;cursor:pointer;user-select:none}
+.qhead:hover{background:var(--panel-2)}
+.qtop{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.qid{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.qbadge{font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;padding:2px 8px;border-radius:20px}
+.qbadge.complete{color:var(--v);border:1px solid var(--v)}
+.qbadge.partial{color:var(--r);border:1px solid var(--r)}
+.qbadge.gap{color:var(--gap);border:1px solid var(--gap)}
+.chev{margin-left:auto;color:var(--ink-3);font-size:11px;transition:transform .15s}
+.subq.closed .chev{transform:rotate(-90deg)}
+.qtext{font-weight:650;font-size:16.5px;line-height:1.3;letter-spacing:-.01em}
+.qbody{padding:2px 18px 18px}
+.subq.closed .qbody{display:none}
+.flabel{font-family:var(--mono);font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3);margin:18px 0 8px}
+.answer{font-family:var(--serif);font-size:16px;line-height:1.56;color:var(--ink);padding-left:14px;border-left:3px solid var(--accent)}
+.gapnote{font-size:13px;color:var(--gap);background:color-mix(in srgb,var(--gap) 8%,transparent);border:1px solid color-mix(in srgb,var(--gap) 30%,transparent);border-radius:8px;padding:9px 12px;margin-top:12px}
+.factlist{margin-top:2px}
+.fact{padding:12px 0;border-bottom:1px solid var(--line)}
+.fact:last-child{border-bottom:none}
+.fact .frow{display:flex;gap:18px;align-items:baseline;justify-content:space-between}
+.fact .claim{font-size:14px;line-height:1.5;flex:1}
+.fact .claim ul{margin:3px 0 0;padding-left:18px}
+.fact .claim li{margin:3px 0}
+.fact .val{font-family:var(--mono);font-weight:700;font-size:14.5px;white-space:nowrap;color:var(--ink);font-variant-numeric:tabular-nums;flex:none}
+.fact .src{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:7px;font-size:11.5px;color:var(--ink-3)}
+.fact .snote{font-style:italic}
+.copybtn{font:inherit;font-size:11px;color:var(--ink-3);background:none;border:1px solid var(--line-2);border-radius:5px;padding:2px 8px;cursor:pointer}
+.copybtn:hover{color:var(--ink);background:var(--panel-2)}
+h3.h{font-size:16px;margin:32px 0 4px;font-weight:650}
+.sublabel{font-family:var(--mono);font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3);margin:18px 0 10px}
+
+/* tables */
+.reg{width:100%;border-collapse:collapse;font-size:13px}
+.reg th{text-align:left;font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);padding:10px 10px;border-bottom:1px solid var(--line-2);background:var(--panel)}
+.reg td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.reg tr:hover td{background:var(--panel-2)}
+.reg .strike{text-decoration:line-through;color:var(--ink-3)}
+.scroller{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel);box-shadow:var(--shadow)}
+.verdict{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.05em;padding:1px 6px;border-radius:4px;border:1px solid var(--line-2);color:var(--ink-2)}
+
+/* search */
+.searchbar{display:flex;gap:10px;align-items:center;margin:4px 0 12px}
+.searchbar input{flex:1;font:inherit;font-size:15px;padding:10px 14px;border:1px solid var(--line-2);border-radius:10px;background:var(--panel);color:var(--ink)}
+.fchips{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 16px}
+.fchip{font:inherit;font-size:12px;padding:4px 10px;border-radius:20px;border:1px solid var(--line-2);background:var(--panel);color:var(--ink-2);cursor:pointer}
+.fchip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.sresult{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel);margin-bottom:8px;cursor:pointer}
+.sresult:hover{border-color:var(--line-2);background:var(--panel-2)}
+.sresult .st{font-size:13.5px;line-height:1.4}
+.sresult .meta{margin-top:5px;font-size:11.5px;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;overflow-wrap:anywhere}
+.sresult .meta .muted{min-width:0;overflow-wrap:anywhere}
+
+/* timeline */
+.tl{position:relative;margin-top:16px}
+.tlrow{display:grid;grid-template-columns:58px 1fr;gap:0;align-items:start}
+.tlyear{font-family:var(--mono);font-weight:700;font-size:15px;color:var(--accent);text-align:right;padding:0 14px 0 0;font-variant-numeric:tabular-nums;position:sticky;top:60px}
+.tlevents{border-left:2px solid var(--line-2);padding:0 0 20px 22px;position:relative}
+.tlevents::before{content:"";position:absolute;left:-6px;top:3px;width:10px;height:10px;border-radius:50%;background:var(--accent);border:2px solid var(--bg)}
+.tlcard{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 14px;margin-bottom:9px;box-shadow:var(--shadow)}
+.tlcard .tt{font-weight:600;font-size:14px;line-height:1.35;display:flex;gap:9px;align-items:baseline}
+.tlcard .sx{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--accent);flex:none;cursor:pointer}
+.tlcard .ttl{flex:1}
+.tlcard .wu{font-size:13px;color:var(--ink-2);line-height:1.5;margin-top:6px}
+
+/* sub-tabs (registers, etc.) */
+.subtabs{display:flex;gap:6px;margin:6px 0 16px;flex-wrap:wrap}
+.subtab{font:inherit;font-size:13px;padding:7px 14px;border-radius:9px;border:1px solid var(--line-2);background:var(--panel);color:var(--ink-2);cursor:pointer}
+.subtab:hover{background:var(--panel-2);color:var(--ink)}
+.subtab.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+
+/* timeline v2 — each card is self-dated, grouped by year */
+.tl2{margin-top:18px;position:relative;padding-left:22px}
+.tl2::before{content:"";position:absolute;left:5px;top:6px;bottom:6px;width:2px;background:var(--line-2)}
+.tlgroup{margin-bottom:16px}
+.tlgroup>.yr{font-family:var(--mono);font-weight:800;font-size:15px;color:var(--accent);font-variant-numeric:tabular-nums;margin:0 0 9px;position:relative}
+.tlgroup>.yr::before{content:"";position:absolute;left:-22px;top:2px;width:12px;height:12px;border-radius:50%;background:var(--accent);border:2px solid var(--bg)}
+.tlcard2{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 14px 11px;box-shadow:var(--shadow);margin-bottom:9px}
+.tlcard2 .dchip{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3)}
+.tlcard2 .tt2{font-weight:650;font-size:14.5px;line-height:1.32;margin:2px 0 0;display:flex;gap:8px;align-items:baseline}
+.tlcard2 .sx2{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--accent);cursor:pointer;flex:none;border:1px solid var(--line-2);border-radius:4px;padding:0 5px}
+.tlcard2 .ttl2{flex:1}
+.tlcard2 .wu2{font-size:13px;color:var(--ink-2);line-height:1.52;margin-top:6px}
+
+/* charts */
+.chartgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+figure.chart{position:relative;margin:0;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 14px 10px;box-shadow:var(--shadow);min-width:0}
+figure.chart.wide{grid-column:span 2}
+@media(max-width:719px){figure.chart.wide{grid-column:span 1}}
+/* instant chart tooltip (replaces the delayed native <title>) */
+#charttip{position:fixed;z-index:120;pointer-events:none;background:var(--sel);color:var(--bg);font-family:var(--mono);font-size:11px;font-weight:600;padding:6px 10px;border-radius:7px;box-shadow:0 4px 14px rgba(0,0,0,.3);opacity:0;transition:opacity .05s;white-space:nowrap;max-width:280px}
+#charttip.on{opacity:1}
+#charttip .tt-lab{color:var(--map-bg);font-weight:400;display:block;font-size:10px;margin-bottom:1px}
+#charttip .tt-title{font-weight:700;margin-bottom:4px}
+#charttip .tt-row{display:flex;align-items:center;gap:7px;line-height:1.55}
+#charttip .tt-sw{width:9px;height:9px;border-radius:2px;flex:none}
+#charttip .tt-k{color:var(--map-bg)}
+#charttip .tt-v{margin-left:auto;font-weight:700;padding-left:14px}
+.cguide{stroke:var(--ink-3);stroke-width:1;stroke-dasharray:3 3;pointer-events:none}
+.chl{pointer-events:none}
+figure.chart figcaption{font-size:13px;color:var(--ink);margin-top:10px;line-height:1.35;font-weight:600}
+figure.chart .csrc{font-size:11px;color:var(--ink-3);margin-top:4px;line-height:1.35}
+.chart-sec{position:absolute;top:12px;right:14px;font-family:var(--mono);font-size:10px;font-weight:700;color:var(--accent);border:1px solid var(--line-2);border-radius:5px;padding:1px 6px;cursor:pointer;background:var(--panel)}
+.chart-sec:hover{background:var(--accent);color:#fff}
+.chart svg{width:100%;height:auto;overflow:visible;display:block}
+.axlab{fill:var(--ink-3);font-family:var(--mono);font-size:10px}
+.axline{stroke:var(--line-2);stroke-width:1}
+.gl{stroke:var(--line);stroke-width:1;stroke-dasharray:2 3}
+.cline{fill:none;stroke-width:2}
+.cdot{stroke:var(--panel);stroke-width:1;cursor:pointer}
+.vlabel{fill:var(--ink-2);font-family:var(--mono);font-size:10px;font-weight:700}
+.cbar{fill:var(--accent);opacity:.85;cursor:pointer}
+.clegend{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--ink-2)}
+.clegend span{display:inline-flex;align-items:center;gap:6px}
+.clegend i{width:14px;height:3px;border-radius:2px;display:inline-block}
+
+/* implications (Collegetown lens) */
+.imp{border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:var(--shadow);margin:14px 0;overflow:hidden}
+.imp-hd{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:13px 18px 0}
+.imp-theme{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);border:1px solid var(--line-2);border-radius:5px;padding:2px 7px}
+.inflag{font-family:var(--mono);font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#fff;background:var(--e);border-radius:5px;padding:2px 7px}
+.conf{font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;padding:2px 8px;border-radius:20px;margin-left:auto}
+.conf.strong{color:var(--v);border:1px solid var(--v)} .conf.moderate{color:var(--r);border:1px solid var(--r)} .conf.tentative{color:var(--ink-3);border:1px solid var(--line-2)}
+.imp .sxlink{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--accent);cursor:pointer;border:1px solid var(--line-2);border-radius:5px;padding:2px 6px}
+.imp h3{font-size:18px;line-height:1.28;letter-spacing:-.01em;margin:10px 18px 0}
+.imp .claim-lead{font-family:var(--serif);font-size:16px;line-height:1.55;color:var(--ink);margin:9px 18px 0;padding-left:14px;border-left:3px solid var(--accent)}
+.imp .imp-sec{padding:2px 18px}
+.imp .imp-sec .flabel{margin:16px 0 6px}
+.imp .basis{font-size:13.5px;line-height:1.55;color:var(--ink-2)}
+.imp .caveat{font-size:13px;line-height:1.5;color:var(--ink-2);background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:10px 12px;margin:6px 18px 0}
+.imp .caveat b{color:var(--ink)}
+.imp .evwrap{margin:0 18px 16px}
+.imp details>summary{cursor:pointer;font-family:var(--mono);font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3);list-style:none;padding:4px 0}
+.imp details>summary::-webkit-details-marker{display:none}
+.imp details>summary::before{content:"▸ ";color:var(--accent)}
+.imp details[open]>summary::before{content:"▾ "}
+
+/* analytical tables (roster / landlords) */
+.dtable{width:100%;border-collapse:collapse;font-size:13px}
+.dtable th{text-align:left;font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);padding:9px 10px;border-bottom:1px solid var(--line-2);background:var(--panel);white-space:nowrap}
+.dtable th.num,.dtable td.num{text-align:right;font-variant-numeric:tabular-nums}
+.dtable td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+.dtable tr:hover td{background:var(--panel-2)}
+.dtable .yr{font-family:var(--mono);font-weight:700;color:var(--accent)}
+.tag-own{display:inline-block;font-family:var(--mono);font-size:9.5px;font-weight:700;letter-spacing:.03em;padding:1px 6px;border-radius:4px;color:#fff}
+.miniglance{display:flex;gap:20px;flex-wrap:wrap;margin:10px 0 18px}
+.miniglance .g{display:flex;flex-direction:column;min-width:120px}
+.miniglance .g b{font-size:21px;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.miniglance .g span{font-size:10.5px;color:var(--ink-3);font-family:var(--mono);letter-spacing:.05em;text-transform:uppercase;margin-top:2px}
+.sharebar{display:flex;height:26px;border-radius:7px;overflow:hidden;border:1px solid var(--line);margin:4px 0 6px}
+.sharebar .seg{display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;color:#fff;font-family:var(--mono);min-width:0;overflow:hidden;white-space:nowrap}
+.sharekey{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--ink-2);margin-bottom:6px}
+.sharekey span{display:inline-flex;align-items:center;gap:6px}
+.sharekey i{width:12px;height:12px;border-radius:3px}
+.ownbar{position:relative;background:var(--panel-2);border-radius:4px;height:15px;min-width:40px}
+.ownbar>i{position:absolute;left:0;top:0;bottom:0;border-radius:4px;opacity:.85}
+.tbar{display:flex;justify-content:flex-end;margin-bottom:8px}
+.csvbtn{font:inherit;font-size:12px;color:var(--ink-2);background:var(--panel);border:1px solid var(--line-2);border-radius:7px;padding:5px 11px;cursor:pointer}
+.csvbtn:hover{background:var(--panel-2);color:var(--ink)}
+.dtable th.sortable{cursor:pointer;user-select:none}
+.dtable th.sortable:hover{color:var(--ink)}
+.dtable th.sort-asc::after{content:" ▲";font-size:7px;color:var(--accent)}
+.dtable th.sort-desc::after{content:" ▼";font-size:7px;color:var(--accent)}
+</style>
+</head>
+<body>
+<aside style="padding:14px 24px;background:#edf4ef;color:#173f32;font:16px/1.5 system-ui;text-align:center;position:relative;z-index:1000">New: <a style="color:#173f32;font-weight:700;text-decoration:underline" href="briefing/">Read the illustrated Syracuse plans briefing — September 7, 2026</a>. The earlier reference site remains below.</aside>
+<header class="nav">
+  <span class="brand"><span class="dot"></span><b>Syracuse</b>&nbsp;College-Town Reference</span>
+  <nav id="tabs"></nav>
+  <span class="nav-sp"></span>
+  <button class="icon-btn" id="themebtn" title="Toggle theme">◐</button>
+</header>
+<main id="view"></main>
+
+<script src="data/parcels.js"></script>
+<script src="data/data.js"></script>
+<script>
+"use strict";
+const PARCELS = window.PARCELS || {features:[]};
+const DATA = window.DATA || null;
+const $ = (s,r=document)=>r.querySelector(s);
+
+/* ---------- helpers ---------- */
+function el(tag,attrs,...kids){
+  const e=document.createElementNS(tag==="svg"||attrs&&attrs._svg?"http://www.w3.org/2000/svg":"http://www.w3.org/1999/xhtml",tag);
+  if(attrs)for(const k in attrs){
+    if(k==="_svg")continue;
+    if(k==="class")e.setAttribute("class",attrs[k]);
+    else if(k==="html")e.innerHTML=attrs[k];
+    else if(k.startsWith("on")&&typeof attrs[k]==="function")e.addEventListener(k.slice(2),attrs[k]);
+    else if(attrs[k]!=null)e.setAttribute(k,attrs[k]);
+  }
+  for(const c of kids){if(c==null||c===false)continue;e.appendChild(c instanceof Node?c:document.createTextNode(String(c)));}
+  return e;
+}
+const svgEl=(tag,attrs)=>{const e=document.createElementNS("http://www.w3.org/2000/svg",tag);
+  if(attrs)for(const k in attrs)if(attrs[k]!=null)e.setAttribute(k,attrs[k]);return e;};
+const fmtMoney=v=>{if(v==null)return"—";if(v>=1e6)return"$"+(v/1e6).toFixed(2)+"M";if(v>=1e3)return"$"+(v/1e3).toFixed(0)+"k";return"$"+v;};
+const fmtInt=v=>v==null?"—":v.toLocaleString("en-US");
+
+/* ---------- theme ---------- */
+(function(){let t=null;try{t=localStorage.getItem("syr-theme");}catch(e){}
+  if(t)document.documentElement.setAttribute("data-theme",t);
+  $("#themebtn").addEventListener("click",()=>{
+    const cur=document.documentElement.getAttribute("data-theme");
+    const mq=window.matchMedia("(prefers-color-scheme:dark)").matches;
+    const next=cur?(cur==="dark"?"light":"dark"):(mq?"light":"dark");
+    document.documentElement.setAttribute("data-theme",next);
+    try{localStorage.setItem("syr-theme",next);}catch(e){}
+    if(state.view==="map"){if(mapGL)refreshGLTheme();else if(typeof recolorMap==="function")recolorMap();}
+  });})();
+
+/* ---------- nav ---------- */
+// One canonical order, used by both the nav and the overview. Grouped so the
+// bar reads as clusters, not one long trailing list. Section tabs show just the
+// § number (full titles are on the overview cards and the page headers).
+const NAVGROUPS=[
+  [["overview","Overview","Overview"]],
+  [["s2","§2","Planning & Zoning"],["s3","§3","District Context"],["s4","§4","Governance"],
+   ["s7","§7","Real Estate"],["s10","§10","Current Issues"]],
+  [["implications","Collegetown","Implications for Collegetown"],["framework","SU Framework","Syracuse University's plan (2017 → 2023)"],
+   ["roster","Development","Development roster"],["landlord","Landlords","Ownership & landlords"]],
+  [["map","Map","Parcel map"],["timeline","Timeline","Timeline"],["charts","Charts","Charts & trends"],["search","Search","Search"]],
+  [["registers","Registers","Sources, corrections & open items"]],
+];
+const TABS=NAVGROUPS.flat();
+function buildTabs(){const n=$("#tabs");
+  NAVGROUPS.forEach((grp,gi)=>{
+    if(gi)n.appendChild(el("span",{class:"navsep"}));
+    grp.forEach(([id,label,full])=>n.appendChild(el("button",{class:"tab","data-go":id,title:full||label,onclick:()=>go(id)},label)));
+  });}
+const REG_ALIAS={sources:"registers",corrections:"registers",open:"registers"};
+function markTab(){const v=REG_ALIAS[state.view]||state.view;
+  document.querySelectorAll("nav .tab").forEach(b=>b.classList.toggle("on",b.dataset.go===v));}
+
+/* ---------- router ---------- */
+const state={view:"map",mapLayer:"ownerClass",sel:null};
+function go(v){state.view=v;location.hash=v;render();}
+window.addEventListener("hashchange",()=>{const h=location.hash.replace(/^#/,"").split("=")[0];
+  if(h&&h!==state.view){state.view=h;render();}});
+const SECMAP={s2:2,s3:3,s4:4,s7:7,s10:10};
+function render(){markTab();const v=$("#view");
+  if(mapGL){try{mapGL.remove();}catch(e){}mapGL=null;}      // dispose WebGL context on nav
+  if(_glFallbackTimer){clearTimeout(_glFallbackTimer);_glFallbackTimer=null;}
+  state.sel=null;                                            // selection never crosses views
+  v.innerHTML="";if(state.view!=="search")window.scrollTo(0,0);
+  if(state.view==="map")return renderMap(v);
+  if(state.view==="overview")return renderOverview(v);
+  if(!DATA)return renderStub(v);
+  if(state.view in SECMAP)return renderSection(v,SECMAP[state.view]);
+  if(state.view==="implications")return renderImplications(v);
+  if(state.view==="framework")return renderFramework(v);
+  if(state.view==="roster")return renderRoster(v);
+  if(state.view==="landlord")return renderLandlord(v);
+  if(state.view==="search")return renderSearch(v);
+  if(state.view==="timeline")return renderTimeline(v);
+  if(state.view==="charts")return renderCharts(v);
+  if(state.view==="registers"||state.view==="sources"||state.view==="corrections"||state.view==="open")return renderRegisters(v);
+  return renderStub(v);}
+
+/* ---------- map projection ---------- */
+let MAPW=900,MAPH=680;const PAD=24;
+let PROJ=null;
+function setupProjection(){
+  let minLon=1e9,maxLon=-1e9,minLat=1e9,maxLat=-1e9;
+  for(const f of PARCELS.features){const rings=f.geometry.type==="Polygon"?f.geometry.coordinates:f.geometry.coordinates.flat();
+    for(const ring of rings)for(const p of ring){if(p[0]<minLon)minLon=p[0];if(p[0]>maxLon)maxLon=p[0];
+      if(p[1]<minLat)minLat=p[1];if(p[1]>maxLat)maxLat=p[1];}}
+  const meanLat=(minLat+maxLat)/2, k=Math.cos(meanLat*Math.PI/180);
+  const geoW=(maxLon-minLon)*k, geoH=(maxLat-minLat);
+  const s=(MAPW-2*PAD)/geoW;               // fit to width
+  MAPH=Math.round(geoH*s+2*PAD);           // tight height, no dead space
+  PROJ={minLon,maxLat,k,s,offX:PAD,offY:PAD};
+}
+const projX=lon=>PROJ.offX+(lon-PROJ.minLon)*PROJ.k*PROJ.s;
+const projY=lat=>PROJ.offY+(PROJ.maxLat-lat)*PROJ.s;
+function ringPath(ring){let d="";for(let i=0;i<ring.length;i++){const x=projX(ring[i][0]).toFixed(1),y=projY(ring[i][1]).toFixed(1);d+=(i?"L":"M")+x+" "+y;}return d+"Z";}
+function parcelPath(f){const g=f.geometry;const polys=g.type==="Polygon"?[g.coordinates]:g.coordinates;
+  return polys.map(poly=>poly.map(ringPath).join("")).join("");}
+
+/* ---------- map color schemes ---------- */
+const ZONE_COLORS={R1:"#c7e9b4",R2:"#a1d99b",R3:"#74c476",R4:"#41ab5d",R5:"#238b45",
+  "MX-1":"#fdd0a2","MX-2":"#fdae6b","MX-3":"#fd8d3c","MX-4":"#e6550d","MX-5":"#a63603",
+  PID:"#6a51a3",OS:"#9ecae1",IN:"#c6c6f0",CM:"#dd3497",PDD:"#807dba",Pending:"#d9d9d9"};
+const OWNER_COLORS={su:"#e6550d",hospital:"#3182bd",government:"#756bb1",nonprofit:"#31a354",private:"#c7ccd1"};
+const OWNER_LABELS={su:"Syracuse University",hospital:"Hospital / medical",government:"Government / public",nonprofit:"Church / nonprofit",private:"Private owner"};
+const SCOPE_COLORS={national:"#d73027",nyother:"#fc8d59",local:"#91bfdb",na:"#e5e7eb",unknown:"#c7ccd1"};
+const SCOPE_LABELS={national:"Out-of-state owner",nyother:"NY, outside CNY",local:"Local (CNY)",na:"Institutional / SU",unknown:"Unclassified owner"};
+const LU_COLORS={residential:"#a1d99b",multifamily:"#238b45",university:"#6a51a3",commercial:"#fd8d3c",
+  institutional:"#3182bd",parking:"#969696",vacant:"#d73027",other:"#d9d9d9"};
+const LU_LABELS={residential:"1–2 family residential",multifamily:"Apartments / multi-family",university:"College / university",
+  commercial:"Commercial",institutional:"Institutional (school/church/hospital)",parking:"Parking",vacant:"Vacant",other:"Other"};
+function luGroup(lu){lu=(lu||"").toLowerCase();
+  if(/vacant/.test(lu))return"vacant";
+  if(/college|univ/.test(lu))return"university";
+  if(/apart|apt|3 fam|three fam|multiple res|converted|row/.test(lu))return"multifamily";
+  if(/1 fam|one fam|2 fam|two fam|single|res\b|residence|home/.test(lu))return"residential";
+  if(/comm|retail|store|office|restaurant|bank|hotel|bar\b/.test(lu))return"commercial";
+  if(/park/.test(lu))return"parking";
+  if(/school|church|hosp|govern|public|relig|educ|cemetery|library|museum/.test(lu))return"institutional";
+  return"other";}
+const YEAR_LEGEND=[["#99000d","before 1900"],["#cb181d","1900–1940"],["#fb6a4a","1940–1970"],["#fcae91","1970–2000"],["#fee5d9","2000 or later"]];
+function yearColor(y){if(!y)return"#e5e7eb";if(y<1900)return"#99000d";if(y<1940)return"#cb181d";if(y<1970)return"#fb6a4a";if(y<2000)return"#fcae91";return"#fee5d9";}
+function valColor(av){if(!av)return"#e5e7eb";const l=Math.log10(av);
+  const stops=[[3,"#ffffcc"],[4.3,"#fed976"],[5,"#fd8d3c"],[5.7,"#e31a1c"],[6.5,"#800026"]];
+  for(let i=stops.length-1;i>=0;i--)if(l>=stops[i][0])return stops[i][1];return stops[0][1];}
+function colorFor(p,layer){
+  if(layer==="zone")return ZONE_COLORS[p.zone]||"#d9d9d9";
+  if(layer==="ownerClass")return OWNER_COLORS[p.ownerClass]||"#c7ccd1";
+  if(layer==="ownerScope")return SCOPE_COLORS[p.ownerScope]||"#e5e7eb";
+  if(layer==="av")return valColor(p.av);
+  if(layer==="year")return yearColor(p.year);
+  if(layer==="landuse")return LU_COLORS[luGroup(p.landUse)];
+  if(layer==="vacant")return p.vacant?"#d73027":"#dfe3e8";
+  return"#ccc";
+}
+
+/* ---------- map render ---------- */
+let mapG=null,zoom={k:1,x:0,y:0};
+const MAP_LAYERS=[["ownerClass","Ownership"],["ownerScope","Local vs national"],["zone","Zoning"],
+  ["av","Assessed value"],["year","Building age"],["landuse","Land use"],["vacant","Vacancy"]];
+function colorLayerRow(onChange){
+  const lr=el("div",{class:"layerrow"});
+  MAP_LAYERS.forEach(([id,lab])=>{
+    const b=el("button",{"data-l":id,class:state.mapLayer===id?"on":"",onclick:()=>{
+      state.mapLayer=id;
+      lr.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x.getAttribute("data-l")===id));
+      onChange(id);}},lab);
+    lr.appendChild(b);});
+  return lr;
+}
+function renderMap(root){
+  if(!PARCELS.features.length){root.appendChild(el("div",{class:"stub"},"Parcel data not found (data/parcels.js).")); return;}
+  const stage=el("div",{class:"mapstage"});
+  const side=el("div",{class:"card pad info",id:"mapinfo"});
+  side.appendChild(el("div",{class:"hint"},"Click any parcel for its full public record."));
+  const layout=el("div",{class:"maplayout"},stage,side);
+  root.appendChild(el("div",{class:"eyebrow"},"Interactive map"));
+  root.appendChild(el("h2",{style:"font-size:22px;margin:6px 0 4px"},"The study area, parcel by parcel"));
+  root.appendChild(el("p",{class:"muted",style:"margin:0 0 14px;font-size:13px;max-width:86ch"},
+    "The three core neighborhoods — University Hill, the University Neighborhood and Westcott (City of Syracuse neighborhood polygons, "+fmtInt(PARCELS.features.filter(f=>f.properties.core).length)+" parcels) — shown vivid over live satellite imagery, with surrounding parcels dimmed for context. Switch the base (satellite / both / parcels), recolor by any attribute, and click a parcel for its full public record. City of Syracuse 2025 Q3 roll, "+fmtInt(PARCELS.features.length)+" parcels in all. Assessed value ≠ market value (first reval in ~30 years, 2024–25)."));
+  root.appendChild(layout);
+  if(window.maplibregl){ try{ initGLMap(stage); }catch(e){ console.error("GL map failed, SVG fallback",e); initSVGFallback(stage); } }
+  else { initSVGFallback(stage); }
+}
+
+/* ---------- MapLibre map (satellite + parcels) ---------- */
+let mapGL=null,_glFallbackTimer=null;
+// Deselect the current parcel (GL or SVG map) and reset the record panel.
+function deselectParcel(){
+  if(!state.sel)return;
+  if(state.sel instanceof Element)state.sel.classList.remove("sel");
+  state.sel=null;
+  if(mapGL){try{mapGL.setFilter("parcels-sel",["==",["get","taxId"],"__none__"]);}catch(e){}}
+  renderInfo(null);
+}
+// Click anywhere outside the map and its record panel, or press Esc, to clear the selection.
+document.addEventListener("click",ev=>{
+  if(!state.sel||!ev.target.closest)return;
+  if(!ev.target.closest(".maplayout")){deselectParcel();return;}          // outside the map + record panel
+  const t=ev.target,tag=(t.tagName||"").toLowerCase();
+  if(state.sel instanceof Element&&(tag==="svg"||t.classList.contains("mapstage")))deselectParcel();   // empty space on the SVG map
+},true);
+document.addEventListener("keydown",ev=>{if(ev.key==="Escape"&&state.sel)deselectParcel();});
+function cssVar(n){return (getComputedStyle(document.body).getPropertyValue(n)||"").trim()||"#888";}
+function matchExpr(prop,colors,fallback){const e=["match",["get",prop]];for(const k in colors)e.push(k,colors[k]);e.push(fallback);return e;}
+function fillExpr(layer){
+  if(layer==="ownerClass")return matchExpr("ownerClass",OWNER_COLORS,OWNER_COLORS.private);
+  if(layer==="ownerScope")return ["case",["==",["get","ownerClass"],"private"],
+    matchExpr("ownerScope",SCOPE_COLORS,SCOPE_COLORS.na),SCOPE_COLORS.na];
+  if(layer==="zone")return matchExpr("zone",ZONE_COLORS,"#d9d9d9");
+  if(layer==="av")return ["step",["to-number",["get","av"]],"#e5e7eb",1000,"#ffffcc",20000,"#fed976",100000,"#fd8d3c",500000,"#e31a1c",3160000,"#800026"];
+  if(layer==="year")return ["case",["has","year"],["step",["to-number",["get","year"]],"#99000d",1900,"#cb181d",1940,"#fb6a4a",1970,"#fcae91",2000,"#fee5d9"],"#e5e7eb"];
+  if(layer==="landuse")return matchExpr("luGroup",LU_COLORS,"#d9d9d9");
+  if(layer==="vacant")return ["case",["==",["get","vacant"],true],"#d73027","#dfe3e8"];
+  return "#cccccc";
+}
+function fillOpacityExpr(coreOp,ctxOp){return ["case",["==",["get","core"],1],coreOp,ctxOp];}
+function initGLMap(stage){
+  if(!PARCELS.__lg){for(const f of PARCELS.features)f.properties.luGroup=luGroup(f.properties.landUse);PARCELS.__lg=true;}
+  const map=new maplibregl.Map({
+    container:stage,
+    style:{version:8,sources:{
+        sat:{type:"raster",tiles:["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"],tileSize:256,maxzoom:19,attribution:'Imagery © Esri, Maxar, Earthstar Geographics'},
+        parcels:{type:"geojson",data:PARCELS,promoteId:"taxId"}},
+      layers:[
+        {id:"bg",type:"background",paint:{"background-color":cssVar("--map-bg")}},
+        {id:"sat",type:"raster",source:"sat"},
+        {id:"parcels-fill",type:"fill",source:"parcels",paint:{"fill-color":fillExpr(state.mapLayer),"fill-opacity":fillOpacityExpr(0.62,0.34)}},
+        {id:"parcels-line",type:"line",source:"parcels",paint:{"line-color":"rgba(90,100,110,.45)","line-width":["interpolate",["linear"],["zoom"],13,0.15,16,0.6]}},
+        {id:"parcels-sel",type:"line",source:"parcels",paint:{"line-color":cssVar("--sel"),"line-width":2.6},filter:["==",["get","taxId"],"__none__"]}
+      ]},
+    center:[-76.1335,43.0425],zoom:13.5,minzoom:11,maxzoom:18,
+    cooperativeGestures:true, attributionControl:{compact:true}
+  });
+  mapGL=map;
+  let _glLoaded=false;
+  map.addControl(new maplibregl.NavigationControl({showCompass:false}),"bottom-right");
+  map.on("error",e=>{try{console.warn("map:",(e&&e.error&&e.error.message)||"error");}catch(_){}});
+  // Robustness: if the satellite/style is blocked or too slow, fall back to the
+  // offline SVG parcel map so the user always gets a working map.
+  _glFallbackTimer=setTimeout(()=>{
+    _glFallbackTimer=null;
+    if(!_glLoaded && mapGL===map && !map.isStyleLoaded()){
+      console.warn("GL map slow to load — switching to SVG fallback");
+      try{map.remove();}catch(_){}
+      mapGL=null; stage.innerHTML=""; initSVGFallback(stage);
+    }
+  },11000);
+  map.on("load",()=>{
+    _glLoaded=true;
+    addGLControls(stage,map);
+    addGLAreaLabels(map);
+    addGLPins(map);
+    map.on("click","parcels-fill",e=>{if(!(e.features&&e.features[0]))return;const props=e.features[0].properties;
+      if(state.sel&&!(state.sel instanceof Element)&&state.sel.taxId===props.taxId){deselectParcel();return;}
+      selectGLParcel(map,props);});
+    map.on("mouseenter","parcels-fill",()=>{map.getCanvas().style.cursor="pointer";});
+    map.on("mouseleave","parcels-fill",()=>{map.getCanvas().style.cursor="";});
+    map.on("click",e=>{const f=map.queryRenderedFeatures(e.point,{layers:["parcels-fill"]});
+      if(!f.length)deselectParcel();});
+    applyViewMode(map,state.mapMode||"both");
+    renderInfo(null);
+  });
+}
+function applyViewMode(map,mode){
+  state.mapMode=mode;
+  const set=(id,prop,val)=>{try{map.setLayoutProperty(id,prop,val);}catch(e){}};
+  if(mode==="sat"){set("sat","visibility","visible");set("parcels-fill","visibility","none");set("parcels-line","visibility","none");set("parcels-sel","visibility","none");}
+  else if(mode==="parcels"){set("sat","visibility","none");set("parcels-fill","visibility","visible");set("parcels-line","visibility","visible");set("parcels-sel","visibility","visible");
+    map.setPaintProperty("parcels-fill","fill-opacity",fillOpacityExpr(1,0.55));}
+  else{set("sat","visibility","visible");set("parcels-fill","visibility","visible");set("parcels-line","visibility","visible");set("parcels-sel","visibility","visible");
+    map.setPaintProperty("parcels-fill","fill-opacity",fillOpacityExpr(0.62,0.34));}
+  const stage=map.getContainer();stage.querySelectorAll(".viewmodes button").forEach(b=>b.classList.toggle("on",b.getAttribute("data-m")===mode));
+}
+function addGLControls(stage,map){
+  const ctrls=el("div",{class:"mapctrls"});
+  ctrls.appendChild(mapSearchBox(map));
+  const vm=el("div",{class:"viewmodes"});
+  [["sat","Satellite"],["both","Both"],["parcels","Parcels"]].forEach(([m,lab])=>
+    vm.appendChild(el("button",{"data-m":m,title:m==="both"?"Satellite + parcels":m==="sat"?"Satellite only":"Parcels only",class:(state.mapMode||"both")===m?"on":"",onclick:()=>applyViewMode(map,m)},lab)));
+  ctrls.appendChild(vm);
+  ctrls.appendChild(colorLayerRow(id=>{map.setPaintProperty("parcels-fill","fill-color",fillExpr(id));refreshGLOverlays(stage);}));
+  stage.appendChild(ctrls);
+  refreshGLOverlays(stage);
+}
+function mapSearchBox(map){
+  const wrap=el("div",{class:"mapsearch"});
+  const inp=el("input",{type:"search",placeholder:"Find a parcel — address or owner…","aria-label":"Find a parcel by address or owner"});
+  const res=el("div",{class:"mapsearch-res"});
+  wrap.appendChild(inp);wrap.appendChild(res);
+  inp.addEventListener("input",()=>{
+    const q=inp.value.toLowerCase().trim();res.innerHTML="";
+    if(q.length<2){res.classList.remove("on");return;}
+    const hits=PARCELS.features.filter(f=>{const p=f.properties;return((p.addr||"")+" "+(p.owner||"")).toLowerCase().includes(q);}).slice(0,10);
+    if(!hits.length){res.classList.remove("on");return;}
+    res.classList.add("on");
+    hits.forEach(f=>{const p=f.properties;
+      res.appendChild(el("div",{class:"msrow",onclick:()=>{
+        inp.value=p.addr||p.owner||"";res.classList.remove("on");
+        if(p.lon!=null&&p.lat!=null)map.flyTo({center:[p.lon,p.lat],zoom:16.5,duration:900});
+        selectGLParcel(map,p);}},
+        el("div",{class:"msaddr"},p.addr||"(no address)"),
+        el("div",{class:"msown"},(p.owner||"")+(p.av?" · "+fmtMoney(p.av):"")))); });
+  });
+  inp.addEventListener("blur",()=>setTimeout(()=>res.classList.remove("on"),180));
+  return wrap;
+}
+function refreshGLOverlays(stage){
+  const old=stage.querySelector(".legend");if(old)old.remove();
+  stage.appendChild(buildLegend());
+  if(!state.sel)renderInfo(null);
+}
+function addGLAreaLabels(map){
+  const acc={};
+  for(const f of PARCELS.features){const p=f.properties;if(!p.core||!p.nhood||p.lat==null||p.lon==null)continue;
+    (acc[p.nhood]=acc[p.nhood]||{x:0,y:0,n:0});acc[p.nhood].x+=p.lon;acc[p.nhood].y+=p.lat;acc[p.nhood].n++;}
+  for(const t in acc){const a=acc[t];
+    const d=el("div",{class:"glarea"},AREA_NAMES[t]||t);
+    new maplibregl.Marker({element:d}).setLngLat([a.x/a.n,a.y/a.n]).addTo(map);}
+}
+function addGLPins(map){
+  if(!(DATA&&DATA.places))return;
+  DATA.places.forEach(pl=>{if(pl.lat==null||pl.lon==null)return;
+    const d=el("div",{class:"glpin",title:pl.name});
+    d.addEventListener("click",ev=>{ev.stopPropagation();state.sel=null;map.setFilter("parcels-sel",["==",["get","taxId"],"__none__"]);renderPlaceInfo(pl);});
+    new maplibregl.Marker({element:d}).setLngLat([pl.lon,pl.lat]).addTo(map);
+  });
+}
+function selectGLParcel(map,props){
+  const id=props.taxId;
+  const clean=(PARCELS.features.find(f=>f.properties.taxId===id)||{properties:props}).properties;
+  state.sel=clean;
+  map.setFilter("parcels-sel",["==",["get","taxId"],id!=null?id:"__none__"]);
+  renderInfo(clean);
+}
+function refreshGLTheme(){if(!mapGL)return;try{mapGL.setPaintProperty("bg","background-color",cssVar("--map-bg"));mapGL.setPaintProperty("parcels-sel","line-color",cssVar("--sel"));}catch(e){}}
+
+/* ---------- SVG map (offline fallback) ---------- */
+function initSVGFallback(stage){
+  if(!PROJ)setupProjection();
+  const ctrls=el("div",{class:"mapctrls"});
+  ctrls.appendChild(colorLayerRow(()=>recolorMap()));
+  stage.appendChild(ctrls);
+  stage.appendChild(el("div",{class:"maphint"},"⌘/Ctrl-scroll or +/− to zoom · drag to pan · zoom in for labels"));
+  drawMap();
+}
+
+/* full drawMap — builds the SVG once; layer/theme changes recolor in place */
+let mapPaths=[],mapLabels=[],mapPins=[],mapSvg=null;
+function drawMap(){
+  const stage=$(".mapstage");if(!stage)return;
+  stage.querySelectorAll("svg,.zoomctrl,.legend").forEach(n=>n.remove());
+  const svg=svgEl("svg",{viewBox:`0 0 ${MAPW} ${MAPH}`,preserveAspectRatio:"xMidYMid meet"});
+  mapSvg=svg;
+  const g=svgEl("g",{});svg.appendChild(g);mapG=g;
+  mapPaths=[];mapLabels=[];mapPins=[];
+  const frag=document.createDocumentFragment();
+  for(const f of PARCELS.features){const p=f.properties;
+    const path=svgEl("path",{class:"parcel"+(p.core?"":" ctx"),"d":parcelPath(f),fill:colorFor(p,state.mapLayer)});
+    path.__p=p;frag.appendChild(path);mapPaths.push(path);}
+  g.appendChild(frag);
+  // one delegated click for all 8k parcels (no per-path listeners)
+  g.addEventListener("click",ev=>{const t=ev.target;if(t&&t.__p){ev.stopPropagation();selectParcel(t,t.__p);}});
+  addAreaLabels(g);addStreetLabels(g);
+  if(DATA&&DATA.places&&DATA.places.length)addPlacePins(g);
+  svg.addEventListener("click",()=>{if(state.sel){state.sel.classList.remove("sel");state.sel=null;renderInfo(null);}});
+  enablePanZoom(svg);
+  stage.appendChild(svg);
+  stage.appendChild(zoomButtons());
+  stage.appendChild(buildLegend());
+  applyZoom();
+  renderInfo(state.sel?state.sel.__p:null);
+}
+function recolorMap(){
+  for(const path of mapPaths)path.setAttribute("fill",colorFor(path.__p,state.mapLayer));
+  const stage=$(".mapstage");if(stage){const ol=stage.querySelector(".legend");if(ol)ol.remove();stage.appendChild(buildLegend());}
+  if(!state.sel)renderInfo(null);
+}
+function applyZoom(){
+  const k=zoom.k;
+  if(mapG)mapG.setAttribute("transform",`translate(${zoom.x} ${zoom.y}) scale(${k})`);
+  if(mapSvg)mapSvg.classList.toggle("zoomed",k>=2.1);
+  // counter-scale labels + pins so they stay a constant on-screen size
+  for(const L of mapLabels){L.el.setAttribute("font-size",(L.base/k).toFixed(2));L.el.setAttribute("stroke-width",(L.stroke/k).toFixed(2));}
+  for(const c of mapPins){c.setAttribute("r",(c.__r/k).toFixed(2));c.setAttribute("stroke-width",(1.4/k).toFixed(2));}
+}
+function selectParcel(path,p){if(state.sel===path){deselectParcel();return;}if(state.sel instanceof Element)state.sel.classList.remove("sel");state.sel=path;path.classList.add("sel");renderInfo(p);}
+function renderInfo(p){const box=$("#mapinfo");if(!box)return;box.innerHTML="";
+  if(!p){box.appendChild(mapStats());
+    box.appendChild(el("div",{class:"hint",style:"margin-top:12px"},"Click any parcel for its full record. Click it again, click outside the map, or press Esc to clear it. Scroll to zoom, drag to pan."));return;}
+  box.appendChild(el("button",{class:"btn-clear",type:"button",title:"Clear selection (or click the parcel again / click outside the map / press Esc)",onclick:()=>deselectParcel()},"Clear selection"));
+  box.appendChild(el("h3",{},p.addr||"(no address)"));
+  box.appendChild(el("div",{class:"muted",style:"font-size:12px"},(p.nhood?p.nhood+" · ":"")+(p.tractLab||("Tract "+p.tract))+(p.core?" · core study area":" · context")));
+  const grp=(label,rows)=>{const kv=el("dl",{class:"kv"});
+    rows.forEach(([k,v])=>{if(v==null||v===""||k==="")return;kv.appendChild(el("dt",{},k));kv.appendChild(el("dd",{},v));});
+    if(kv.children.length)box.appendChild(el("div",{class:"kvgroup"},el("div",{class:"kvglabel"},label),kv));};
+  grp("Ownership",[["Owner",p.owner],["Owner type",OWNER_LABELS[p.ownerClass]||p.ownerClass],
+    p.ownerClass==="private"?["Owner base",SCOPE_LABELS[p.ownerScope]||p.ownerScope]:["",null],
+    ["Owner mailing",p.ownerFull||p.ownerCity]]);
+  grp("Valuation",[["Total assessed",fmtMoney(p.av)],["Land assessed",p.landAv?fmtMoney(p.landAv):null]]);
+  grp("Zoning & use",[["Zone (ReZone)",p.zone],["Land use",p.landUse],["Class code",p.landUseCode],p.pd?["PID plan",p.pd]:["",null]]);
+  grp("Building & lot",[["Residential units",p.units?fmtInt(p.units):null],["Year built",p.year||null],
+    ["Condition",p.condition],["Vacant (IPS)",p.vacant?"yes":"no"],["Acres",p.acres],
+    (p.front&&p.depth)?["Lot (ft)",p.front+" × "+p.depth]:["",null]]);
+  grp("Administrative",[["Neighborhood",p.nhood],["TNT area",p.tnt],["City ward",p.ward],["DPW quad",p.dpwQuad]]);
+  box.appendChild(el("div",{class:"hint",style:"margin-top:12px"},"Tax parcel "+(p.printkey||p.taxId||"")));
+}
+function mapStats(){
+  const box=el("div",{});
+  box.appendChild(el("div",{class:"eyebrow",style:"margin-bottom:8px"},"Core study area · "+layerName()));
+  const feats=PARCELS.features.map(f=>f.properties).filter(p=>p.core);
+  const total=feats.reduce((s,p)=>s+(p.av||0),0)||1;
+  const groups={};
+  const keyf=state.mapLayer==="zone"?p=>p.zone
+    :state.mapLayer==="ownerScope"?p=>p.ownerClass==="private"?p.ownerScope:"na"
+    :state.mapLayer==="vacant"?p=>p.vacant?"vacant":"occupied"
+    :state.mapLayer==="landuse"?p=>luGroup(p.landUse)
+    :state.mapLayer==="year"?p=>p.year?(p.year<1900?"before 1900":p.year<1940?"1900–40":p.year<1970?"1940–70":p.year<2000?"1970–2000":"2000+"):"unknown"
+    :p=>p.ownerClass;
+  for(const p of feats){const k=keyf(p)||"—";(groups[k]=groups[k]||{n:0,av:0});groups[k].n++;groups[k].av+=p.av||0;}
+  const rows=Object.entries(groups).sort((a,b)=>b[1].av-a[1].av);
+  const nameFor=k=>state.mapLayer==="ownerClass"?(OWNER_LABELS[k]||k):state.mapLayer==="ownerScope"?(SCOPE_LABELS[k]||k):state.mapLayer==="landuse"?(LU_LABELS[k]||k):k;
+  for(const [k,o] of rows){
+    box.appendChild(el("div",{class:"statline"},
+      el("span",{style:"flex:1;padding-right:8px"},nameFor(k)),
+      el("b",{},(100*o.av/total).toFixed(1)+"%  ·  "+o.n)));
+  }
+  box.appendChild(el("div",{class:"hint",style:"margin-top:6px"},"share of core assessed value · parcel count · core total "+fmtMoney(total)));
+  return box;
+}
+function layerName(){return{ownerClass:"Ownership",ownerScope:"Local vs national",zone:"Zoning",av:"Assessed value",year:"Building age",landuse:"Land use",vacant:"Vacancy"}[state.mapLayer];}
+function buildLegend(){
+  const lg=el("div",{class:"legend"});
+  lg.appendChild(el("div",{class:"lg-title"},layerName()));
+  let items=[];
+  if(state.mapLayer==="ownerClass")items=Object.keys(OWNER_COLORS).map(k=>[OWNER_COLORS[k],OWNER_LABELS[k]]);
+  else if(state.mapLayer==="ownerScope")items=Object.keys(SCOPE_COLORS).map(k=>[SCOPE_COLORS[k],SCOPE_LABELS[k]]);
+  else if(state.mapLayer==="zone")items=Object.keys(ZONE_COLORS).map(k=>[ZONE_COLORS[k],k]);
+  else if(state.mapLayer==="av")items=[["#e5e7eb","< $1k / n/a"],["#ffffcc","$1k–20k"],["#fed976","$20k–100k"],["#fd8d3c","$100k–500k"],["#e31a1c","$500k–3.2M"],["#800026","> $3.2M"]];
+  else if(state.mapLayer==="year")items=YEAR_LEGEND;
+  else if(state.mapLayer==="landuse")items=Object.keys(LU_COLORS).map(k=>[LU_COLORS[k],LU_LABELS[k]]);
+  else if(state.mapLayer==="vacant")items=[["#d73027","IPS-vacant"],["#dfe3e8","occupied"]];
+  for(const [c,l] of items)lg.appendChild(el("div",{class:"lg-row"},el("span",{class:"sw",style:"background:"+c}),el("span",{},l)));
+  return lg;
+}
+function zoomButtons(){const z=el("div",{class:"zoomctrl"});
+  z.appendChild(el("button",{onclick:()=>zoomBy(1.4)},"+"));
+  z.appendChild(el("button",{onclick:()=>zoomBy(1/1.4)},"–"));
+  z.appendChild(el("button",{title:"reset",style:"font-size:12px",onclick:()=>{zoom={k:1,x:0,y:0};applyZoom();}},"⤾"));
+  return z;}
+function zoomBy(f){zoom.k=Math.max(1,Math.min(12,zoom.k*f));applyZoom();}
+function enablePanZoom(svg){
+  let dragging=false,sx=0,sy=0,ox=0,oy=0;
+  // Only zoom on ⌘/Ctrl-scroll (Mac trackpad pinch sets ctrlKey, so pinch still
+  // zooms); a plain two-finger scroll passes straight through to the page.
+  svg.addEventListener("wheel",ev=>{
+    if(!(ev.ctrlKey||ev.metaKey))return;
+    ev.preventDefault();
+    const rect=svg.getBoundingClientRect();const mx=(ev.clientX-rect.left)/rect.width*MAPW,my=(ev.clientY-rect.top)/rect.height*MAPH;
+    const f=ev.deltaY<0?1.12:1/1.12;const nk=Math.max(1,Math.min(12,zoom.k*f));
+    zoom.x=mx-(mx-zoom.x)*(nk/zoom.k);zoom.y=my-(my-zoom.y)*(nk/zoom.k);zoom.k=nk;
+    if(zoom.k===1){zoom.x=0;zoom.y=0;}applyZoom();},{passive:false});
+  svg.addEventListener("pointerdown",ev=>{dragging=true;svg.classList.add("drag");sx=ev.clientX;sy=ev.clientY;ox=zoom.x;oy=zoom.y;svg.setPointerCapture(ev.pointerId);});
+  svg.addEventListener("pointermove",ev=>{if(!dragging)return;const rect=svg.getBoundingClientRect();
+    zoom.x=ox+(ev.clientX-sx)/rect.width*MAPW;zoom.y=oy+(ev.clientY-sy)/rect.height*MAPH;applyZoom();});
+  svg.addEventListener("pointerup",ev=>{dragging=false;svg.classList.remove("drag");});
+  svg.addEventListener("pointercancel",()=>{dragging=false;svg.classList.remove("drag");});
+}
+// Core areas = City of Syracuse neighborhood polygons (parcel NHOOD field), matching the study boundary.
+const AREA_NAMES={"University Hill":"University Hill","University Neighborhood":"University Neighborhood","Westcott":"Westcott"};
+function addAreaLabels(g){
+  const acc={};
+  for(const f of PARCELS.features){const p=f.properties;if(!p.core||!p.nhood||p.lat==null||p.lon==null)continue;
+    (acc[p.nhood]=acc[p.nhood]||{x:0,y:0,n:0});acc[p.nhood].x+=p.lon;acc[p.nhood].y+=p.lat;acc[p.nhood].n++;}
+  for(const t in acc){const a=acc[t];const x=projX(a.x/a.n),y=projY(a.y/a.n);
+    const el=svgEl("text",{class:"arealabel",x:x,y:y,"font-size":13,"text-anchor":"middle"});
+    el.textContent=AREA_NAMES[t]||t;g.appendChild(el);mapLabels.push({el,base:13,stroke:3.5});}
+}
+function addStreetLabels(g){
+  const acc={};
+  for(const f of PARCELS.features){const p=f.properties;if(!p.core||!p.street||p.lat==null)continue;
+    const s=p.street.replace(/\s+(ave|st|street|pl|place|blvd|dr)\b.*/i,"").trim();
+    (acc[s]=acc[s]||{x:0,y:0,n:0});acc[s].x+=p.lon;acc[s].y+=p.lat;acc[s].n++;}
+  const big=Object.entries(acc).filter(([s,a])=>a.n>=14).sort((a,b)=>b[1].n-a[1].n).slice(0,16);
+  for(const [s,a] of big){const x=projX(a.x/a.n),y=projY(a.y/a.n);
+    const el=svgEl("text",{class:"streetlabel",x:x,y:y,"font-size":8,"text-anchor":"middle"});
+    el.textContent=s;g.appendChild(el);mapLabels.push({el,base:8,stroke:2.4});}
+}
+function addPlacePins(g){
+  for(const pl of DATA.places){
+    if(pl.lat==null||pl.lon==null)continue;
+    const x=projX(pl.lon),y=projY(pl.lat);
+    const c=svgEl("circle",{class:"pin",cx:x,cy:y,r:4.6});c.__r=4.6;
+    const ti=svgEl("title");ti.textContent=pl.name;c.appendChild(ti);
+    c.addEventListener("click",ev=>{ev.stopPropagation();if(state.sel){state.sel.classList.remove("sel");state.sel=null;}renderPlaceInfo(pl);});
+    g.appendChild(c);mapPins.push(c);
+    const lb=svgEl("text",{class:"pinlabel",x:x+6,y:y+3,"font-size":9});lb.textContent=pl.name;
+    g.appendChild(lb);mapLabels.push({el:lb,base:9,stroke:3});
+  }
+}
+function renderPlaceInfo(pl){const box=$("#mapinfo");if(!box)return;box.innerHTML="";
+  box.appendChild(el("div",{class:"eyebrow"},"Key site"));
+  box.appendChild(el("h3",{style:"margin:4px 0 3px"},pl.name));
+  if(pl.note)box.appendChild(el("div",{class:"muted",style:"font-size:12.5px;line-height:1.45"},pl.note));
+  const fs=(pl.factIds||[]).map(id=>DATA.facts.find(f=>f.id===id)).filter(Boolean);
+  if(fs.length){box.appendChild(el("div",{class:"flabel",style:"margin-top:12px"},"Related facts · "+fs.length));
+    fs.forEach(f=>box.appendChild(el("div",{class:"statline"},
+      el("span",{style:"flex:1;padding-right:8px"},f.statement),f.value?el("b",{},String(f.value)):null)));}
+  if(pl.sections&&pl.sections.length)box.appendChild(el("div",{style:"margin-top:12px"},
+    el("a",{href:"#",onclick:e=>{e.preventDefault();go("s"+pl.sections[0]);}},"Open §"+pl.sections[0]+" →")));
+  box.appendChild(el("div",{class:"hint",style:"margin-top:10px"},"Click a parcel for its record, or another ◆ pin."));
+}
+
+/* ---------- overview (partial until data.js lands) ---------- */
+function renderOverview(root){
+  root.appendChild(el("div",{class:"eyebrow"},"Cornell REAL 6595 · College-Town Precedent Study"));
+  root.appendChild(el("h2",{style:"font-size:26px;margin:6px 0 4px"},"Syracuse's college-town core — research reference"));
+  root.appendChild(el("p",{class:"muted wrap-narrow",style:"margin:0 0 4px"},
+    "University Hill · the University Neighborhood · Westcott. A working reference over the audited research database, organized by the assignment's sections and guiding questions."));
+  // parcel-derived glance (core study area only)
+  const feats=PARCELS.features.map(f=>f.properties).filter(p=>p.core);
+  const suAv=feats.filter(p=>p.ownerClass==="su").reduce((s,p)=>s+(p.av||0),0);
+  const totAv=feats.reduce((s,p)=>s+(p.av||0),0);
+  const glance=el("div",{class:"glance"},
+    stat(fmtInt(feats.length),"parcels mapped"),
+    stat("$"+(totAv/1e9).toFixed(2)+"B","assessed value"),
+    stat((100*suAv/totAv).toFixed(0)+"%","SU-owned (3 core areas)"),
+    DATA?stat(fmtInt(DATA.facts?DATA.facts.length:0),"facts"):stat("…","facts (loading)"),
+    DATA&&DATA.corrections?stat(fmtInt(DATA.corrections.length),"corrections"):stat("…","corrections"));
+  root.appendChild(glance);
+  const sc=el("div",{class:"grid-cards"});
+  [["s2","§2 Zoning & the 2023 code rewrite"],["s3","§3 Context, demographics & economy"],
+   ["s4","§4 Governance & district management"],["s7","§7 Real estate & housing"],
+   ["s10","§10 Current issues & the response"]].forEach(([id,t])=>{
+    const sec=DATA&&DATA.sections.find(s=>s.n===SECMAP[id]);
+    sc.appendChild(el("div",{class:"card pad clickable",onclick:()=>go(id)},
+      el("div",{class:"eyebrow"},id.toUpperCase()),
+      el("div",{style:"margin-top:6px;font-weight:650;font-size:15px"},t),
+      sec?el("div",{class:"muted",style:"font-size:12px;margin-top:8px"},sec.nFacts+" facts · "+sec.coverage.complete+" complete"+(sec.coverage.partial?" · "+sec.coverage.partial+" partial":"")):null,
+      el("div",{class:"card-arrow",style:"font-size:13px;margin-top:8px"},"Open →")));});
+  root.appendChild(el("h3",{style:"font-size:14px;margin:22px 0 10px"},"Sections & guiding questions"));
+  root.appendChild(sc);
+  // synthesis + real-estate analysis
+  root.appendChild(el("h3",{style:"font-size:14px;margin:30px 0 10px"},"Synthesis & analysis"));
+  const ac=el("div",{class:"grid-cards"});
+  const nImp=DATA&&DATA.implications?DATA.implications.length:0;
+  [["implications","Implications for Collegetown","What the Syracuse precedent suggests for Cornell: "+nImp+" evidence-linked inferences.",true],
+   ["framework","The university's plan","How SU planned the district and what changed — its 2017 Campus Framework and 2023 Refresh.",true],
+   ["roster","Development roster","Core buildings from 2005 on: year, units, owner, assessed value — from the parcel roll."],
+   ["landlord","Ownership & landlords","Who owns the core, absentee vs. local, and the largest owners by parcels held."]].forEach(([id,t,d,lead])=>{
+    ac.appendChild(el("div",{class:"card pad clickable",onclick:()=>go(id),style:lead?"border-color:var(--accent)":""},
+      el("div",{class:"eyebrow",style:lead?"color:var(--accent)":""},lead?"Synthesis":"Real estate"),
+      el("div",{style:"margin-top:6px;font-weight:650;font-size:15px"},t),
+      el("div",{class:"muted",style:"font-size:12.5px;margin-top:6px"},d),
+      el("div",{class:"card-arrow",style:"font-size:13px;margin-top:8px"},"Open →")));});
+  root.appendChild(ac);
+  root.appendChild(el("h3",{style:"font-size:14px;margin:30px 0 10px"},"Lenses & tools"));
+  const lc=el("div",{class:"grid-cards"});
+  [["map","Map","Parcels over live satellite imagery — recolor by ownership, zoning, value, age, or land use; click any parcel for its record."],
+   ["charts","Charts","Every plottable series, with comparison overlays. Hover any point for its date and value."],
+   ["timeline","Timeline","A dated record of the events that shaped the district, 1870 to today."],
+   ["search","Search","Find any fact by keyword, value, section, or evidence tag."],
+   ["registers","Registers","The source index, the audit corrections, and the open items still to close."]].forEach(([id,t,d])=>{
+    lc.appendChild(el("div",{class:"card pad clickable",onclick:()=>go(id)},
+      el("div",{class:"eyebrow"},t),el("div",{class:"muted",style:"font-size:12.5px;margin-top:6px"},d),
+      el("div",{class:"card-arrow",style:"font-size:13px;margin-top:8px"},"Open →")));});
+  root.appendChild(lc);
+}
+function stat(b,s){return el("div",{class:"g"},el("b",{},b),el("span",{},s));}
+
+/* ---------- generic stub ---------- */
+function renderStub(root){
+  const titles={s2:"§2 Zoning",s3:"§3 Context",s4:"§4 Governance",s7:"§7 Real Estate",s10:"§10 Issues",
+    timeline:"Timeline",sources:"Sources",corrections:"Corrections",open:"Open Items"};
+  root.appendChild(el("div",{class:"eyebrow"},"View"));
+  root.appendChild(el("h2",{style:"font-size:22px;margin:6px 0 14px"},titles[state.view]||state.view));
+  root.appendChild(el("div",{class:"stub"},
+    DATA?"This view is being built in the next stage.":"Waiting on the structured dataset (data/data.js). The Map lens is live now — open “Map”."));
+}
+
+/* ---------- shared view helpers ---------- */
+const H2S="font-size:22px;margin:6px 0 4px";
+function vhead(root,eb,title,sub){root.appendChild(el("div",{class:"eyebrow"},eb));
+  root.appendChild(el("h2",{style:H2S},title));
+  if(sub)root.appendChild(el("p",{class:"muted",style:"margin:6px 0 14px;font-size:13px;max-width:80ch"},sub));}
+const th=t=>el("th",{},t);
+const td=(...k)=>el("td",{},...k);
+function chip(t){t=(t||"").toString().toLowerCase();const cls={v:"v",r:"r",e:"e"}[t]||"e";
+  return el("span",{class:"chip "+cls},t.toUpperCase());}
+function fallbackCopy(s,done){const ta=document.createElement("textarea");ta.value=s;ta.style.position="fixed";ta.style.opacity="0";
+  document.body.appendChild(ta);ta.select();try{document.execCommand("copy");}catch(e){}ta.remove();done&&done();}
+function copyCite(f,btn){let s=f.statement||"";if(f.value)s+=" — "+f.value+(f.unit?" "+f.unit:"");
+  s+=" ("+(f.source||"source not stated")+") ["+f.tag+"]";
+  const done=()=>{if(btn){const o=btn.textContent;btn.textContent="copied ✓";setTimeout(()=>btn.textContent=o,1200);}};
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(s).then(done,()=>fallbackCopy(s,done));
+  else fallbackCopy(s,done);}
+
+/* ---------- section lens (Lens A) ---------- */
+function covBar(sec){const c=sec.coverage||{};const bar=el("div",{class:"covbar"});
+  const pill=(k,lab,n)=>el("span",{class:"covpill"},el("span",{class:"d cov-"+k}),el("span",{},n+" "+lab));
+  if(c.complete)bar.appendChild(pill("complete","complete",c.complete));
+  if(c.partial)bar.appendChild(pill("partial","partial",c.partial));
+  if(c.gap)bar.appendChild(pill("gap","gap",c.gap));
+  bar.appendChild(el("span",{class:"muted",style:"margin-left:4px"},"· "+sec.nFacts+" facts"));
+  return bar;}
+function claimEl(statement){
+  const parts=String(statement||"").split(/;\s+/).filter(Boolean);
+  if(parts.length>=2){const ul=el("ul",{});parts.forEach(p=>ul.appendChild(el("li",{},p)));return el("div",{class:"claim"},ul);}
+  return el("div",{class:"claim"},statement);
+}
+function shortVal(v){return v!=null&&v!==""&&(typeof v==="number"||String(v).length<=18);}
+function factRow(f){
+  const row=el("div",{class:"fact",id:"f-"+f.id});
+  row.appendChild(el("div",{class:"frow"},
+    claimEl(f.statement),
+    shortVal(f.value)?el("div",{class:"val"},String(f.value)):null));
+  row.appendChild(el("div",{class:"src"},
+    chip(f.tag),
+    f.source?el("span",{},f.source):null,
+    f.asof?el("span",{},"· "+f.asof):null,
+    f.note?el("span",{class:"snote"},"· "+f.note):null,
+    el("button",{class:"copybtn",title:"Copy a citation-ready line",onclick:e=>{e.stopPropagation();copyCite(f,e.target);}},"copy")));
+  return row;}
+function factList(qf){
+  const wrap=el("div",{class:"factlist"});
+  qf.forEach(f=>wrap.appendChild(factRow(f)));
+  return wrap;}
+function subqBlock(q,qf,related){
+  const box=el("div",{class:"subq"+(related?" related":""),id:"q-"+q.id});
+  const toggle=()=>box.classList.toggle("closed");
+  const head=el("div",{class:"qhead",role:"button",tabindex:"0",onclick:toggle,
+    onkeydown:e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();toggle();}}},
+    el("div",{class:"qtop"},
+      el("span",{class:"qid"},related?"Related context":q.id),
+      related?null:el("span",{class:"qbadge "+q.coverage},q.coverage),
+      el("span",{class:"chev"},"▾")),
+    el("div",{class:"qtext"},q.question));
+  const body=el("div",{class:"qbody"});
+  if(q.answer){body.appendChild(el("div",{class:"flabel"},"Summary answer"));body.appendChild(el("div",{class:"answer"},q.answer));}
+  if(q.gapNote)body.appendChild(el("div",{class:"gapnote"},"Gap — "+q.gapNote));
+  if(qf.length){body.appendChild(el("div",{class:"flabel"},(related?"Facts":"Supporting data")+" · "+qf.length));body.appendChild(factList(qf));}
+  box.appendChild(head);box.appendChild(body);
+  return box;}
+function renderSection(root,n){
+  const sec=DATA.sections.find(s=>s.n===n);if(!sec)return renderStub(root);
+  vhead(root,"Section "+n,sec.title,sec.blurb);
+  root.appendChild(covBar(sec));
+  const qs=DATA.subquestions.filter(q=>q.section===n);
+  const secFacts=DATA.facts.filter(f=>f.section===n);
+  const assigned=new Set();
+  const qwrap=el("div",{style:"margin-top:14px"});
+  // Dedupe: a fact referenced by two subquestions renders once (under the first
+  // that claims it) — avoids duplicate DOM ids and repeated rows.
+  qs.forEach(q=>{const qf=secFacts.filter(f=>(f.subq===q.id||(q.factIds||[]).includes(f.id))&&!assigned.has(f.id));
+    qf.forEach(f=>assigned.add(f.id));qwrap.appendChild(subqBlock(q,qf));});
+  const other=secFacts.filter(f=>!assigned.has(f.id));
+  if(other.length)qwrap.appendChild(subqBlock({id:"other",question:"Additional data related to this section — not tied to a specific guiding question.",coverage:"complete"},other,true));
+  root.appendChild(qwrap);
+  const comps=comparisonsFor(n),ser=DATA.series.filter(s=>s.section===n);
+  if(comps.length||ser.length){
+    root.appendChild(el("h3",{class:"h"},"Charts & data"));
+    if(comps.length){root.appendChild(el("div",{class:"sublabel"},"Comparisons"));
+      const g=el("div",{class:"chartgrid"});comps.forEach(c=>g.appendChild(comboFigure(c)));root.appendChild(g);}
+    if(ser.length){if(comps.length)root.appendChild(el("div",{class:"sublabel"},"Individual series"));
+      const g=el("div",{class:"chartgrid"});ser.forEach(s=>g.appendChild(buildChart(s,false)));root.appendChild(g);}
+  }
+}
+
+/* ---------- implications for Collegetown (synthesis lens) ---------- */
+const CONF_LABEL={strong:"Well-grounded",moderate:"Moderate",tentative:"Tentative"};
+function renderImplications(root){
+  const IMP=(DATA.implications||[]);
+  vhead(root,"Synthesis · Precedent","What Syracuse suggests for Cornell's Collegetown",
+    "Each item is an inference drawn from Syracuse's college-town core, marked as such — not a verified fact about Collegetown. Each states the pattern, shows the Syracuse evidence it rests on, and notes where the analogy holds or breaks.");
+  if(!IMP.length){root.appendChild(el("div",{class:"stub"},"No implications loaded."));return;}
+  root.appendChild(el("div",{class:"card pad",style:"border-left:3px solid var(--e);margin-bottom:16px"},
+    el("div",{style:"font-size:13px;line-height:1.5;color:var(--ink-2)"},
+      el("b",{class:"inflag",style:"margin-right:8px"},"How to read this"),
+      "These are precedent-based hypotheses for Collegetown, generated from the Syracuse study. The Syracuse evidence is verified (V/R/E tags carry through); the Collegetown application is inference and needs testing against Collegetown's own conditions.")));
+  IMP.forEach(im=>{
+    const card=el("div",{class:"imp"});
+    card.appendChild(el("div",{class:"imp-hd"},
+      el("span",{class:"imp-theme"},im.theme),
+      el("span",{class:"inflag"},"Inference"),
+      el("span",{class:"sxlink",title:"Open §"+im.section,onclick:()=>go("s"+im.section)},"§"+im.section),
+      el("span",{class:"conf "+(im.confidence||"tentative"),title:"Confidence in the inference"},CONF_LABEL[im.confidence]||im.confidence)));
+    card.appendChild(el("h3",{},im.title));
+    card.appendChild(el("div",{class:"claim-lead"},im.claim));
+    const body=el("div",{class:"imp-sec"});
+    body.appendChild(el("div",{class:"flabel"},"What Syracuse shows"));
+    body.appendChild(el("div",{class:"basis"},im.basis));
+    card.appendChild(body);
+    const fs=(im.factIds||[]).map(id=>DATA.facts.find(f=>f.id===id)).filter(Boolean);
+    if(fs.length){
+      const det=el("details",{open:""});
+      det.appendChild(el("summary",{},"Syracuse evidence · "+fs.length+" facts"));
+      const fl=el("div",{class:"factlist"});fs.forEach(f=>fl.appendChild(factRow(f)));
+      det.appendChild(fl);
+      card.appendChild(el("div",{class:"evwrap"},det));
+    }
+    card.appendChild(el("div",{class:"caveat"},el("b",{},"Where it holds / breaks — "),im.caveat));
+    card.appendChild(el("div",{style:"height:14px"}));
+    root.appendChild(card);
+  });
+}
+
+/* ---------- SU Framework (the university's own plan: 2017 → 2023) ---------- */
+function renderFramework(root){
+  vhead(root,"Synthesis · The university's plan",
+    "How Syracuse University planned the district — and what changed",
+    "Syracuse University's own stated intentions, from its 2017 Campus Framework and the 2023 Refresh (both prepared by Sasaki Associates). This is the plan behind the built outcomes shown in the Development roster and on the Map. Where the university revised course, both the original intent and the revision appear.");
+  const pool=(DATA.facts||[]).filter(f=>/campus framework|strategic housing plan/i.test(f.source||""));
+  if(!pool.length){root.appendChild(el("div",{class:"stub"},"No framework facts loaded."));return;}
+  const used=new Set();
+  const take=pred=>{const r=pool.filter(f=>!used.has(f.id)&&pred(f));r.forEach(f=>used.add(f.id));return r;};
+  const built=take(f=>/strategic housing plan/i.test(f.source||""));
+  const revised=take(f=>/2023 refresh/i.test(f.source||"")&&f.topic!=="governance");
+  const governance=take(f=>f.topic==="governance");
+  const rest=take(()=>true);
+  const intent=rest.filter(f=>["campus-framework","housing-pipeline","housing-stock"].includes(f.topic)||/relocate|campus-city/i.test(f.statement||""));
+  const baseline=rest.filter(f=>!intent.includes(f));
+
+  root.appendChild(el("div",{class:"card pad",style:"border-left:3px solid var(--accent);margin-bottom:16px"},
+    el("div",{style:"font-size:13px;line-height:1.5;color:var(--ink-2)"},
+      el("b",{style:"margin-right:8px"},"How to read this"),
+      "A university master plan is a statement of intent, not a record of what exists. Facts are tagged R where they state a plan or policy and V where they report a printed figure; the built results are in the Development roster and the parcel Map.")));
+
+  const step=(lab,txt)=>el("div",{class:"card pad",style:"flex:1;min-width:170px"},
+    el("div",{class:"eyebrow",style:"color:var(--accent)"},lab),
+    el("div",{style:"font-size:12.5px;color:var(--ink-2);margin-top:6px;line-height:1.45"},txt));
+  const arrow=()=>el("div",{style:"align-self:center;color:var(--e);font-size:20px;padding:0 2px"},"→");
+  root.appendChild(el("div",{style:"display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px"},
+    step("Planned · 2017","Relocate South Campus underclass housing to Main; build a 'Campus-City Community' along University Avenue."),
+    arrow(),
+    step("Built · 2019–2024","Milton Hall, Orange Hall, and 20+ projects delivered; two more halls announced (700 Ostrom; Comstock/Waverly)."),
+    arrow(),
+    step("Revised · 2023","Keep and reinvest in South Campus; lean on private housing near Main; shelve the University Avenue vision.")));
+
+  const block=(title,facts,note)=>{
+    if(!facts.length)return;
+    root.appendChild(el("h3",{style:"font-size:14px;margin:26px 0 10px"},title));
+    if(note)root.appendChild(el("p",{class:"muted",style:"font-size:12.5px;margin:0 0 10px;max-width:80ch"},note));
+    root.appendChild(factList(facts));
+  };
+
+  block("The 2017 plan — stated intent",intent,"The strategy that produced the Main-Campus dorm build-out and SU's purchases along Marshall Street and University Avenue.");
+
+  if(baseline.length){
+    root.appendChild(el("h3",{style:"font-size:14px;margin:26px 0 10px"},"Fall-2016 baseline"));
+    const det=el("details",{});
+    det.appendChild(el("summary",{},"Enrollment, space, land, and parking as the plan recorded them · "+baseline.length+" facts"));
+    det.appendChild(factList(baseline));
+    root.appendChild(el("div",{class:"evwrap"},det));
+  }
+
+  if(governance.length)block("Who runs the plan",governance,"The Framework is internally governed — it creates no external district authority.");
+
+  block("Built and in motion",built,"The forward pipeline; the delivered buildings themselves are in the Development roster.");
+  root.appendChild(el("div",{style:"display:flex;gap:10px;flex-wrap:wrap;margin:4px 0 6px"},
+    el("button",{class:"tab",onclick:()=>go("roster")},"Development roster →"),
+    el("button",{class:"tab",onclick:()=>go("timeline")},"Timeline →"),
+    el("button",{class:"tab",onclick:()=>go("s7")},"§7 Real Estate →")));
+
+  block("2023 course corrections",revised,"Where the university changed direction between the 2017 plan and the 2023 Refresh.");
+
+  root.appendChild(el("div",{style:"height:16px"}));
+}
+
+/* ---------- development roster (from the parcel roll) ---------- */
+/* sortable + exportable data tables (roster, landlords) */
+function finishTable(root,table,csvName){
+  const bar=el("div",{class:"tbar"},
+    el("button",{class:"csvbtn",title:"Download this table as CSV",onclick:()=>downloadCSV(table,csvName)},"⤓ CSV"));
+  root.appendChild(bar);
+  root.appendChild(el("div",{class:"scroller"},table));
+  enhanceTable(table);
+}
+function enhanceTable(table){
+  const ths=[...table.querySelectorAll("thead th")];
+  const tbody=table.querySelector("tbody");if(!tbody)return;
+  let sortCol=-1,asc=true;
+  const num=t=>{const m=String(t).replace(/[^0-9.\-]/g,"");return m===""||m==="-"?null:parseFloat(m);};
+  const key=(tr,ci)=>{const c=tr.children[ci];if(!c)return"";const d=c.getAttribute("data-sort");return d!=null?d:c.textContent.trim();};
+  ths.forEach((th,ci)=>{
+    if(!th.textContent.trim())return;
+    th.classList.add("sortable");th.tabIndex=0;th.setAttribute("role","button");th.title="Sort by "+th.textContent.trim();
+    const doSort=()=>{
+      asc=(sortCol===ci)?!asc:true;sortCol=ci;
+      const rows=[...tbody.querySelectorAll("tr")];
+      rows.sort((a,b)=>{const x=key(a,ci),y=key(b,ci),nx=num(x),ny=num(y);
+        let r=(nx!=null&&ny!=null)?nx-ny:String(x).localeCompare(String(y));return asc?r:-r;});
+      rows.forEach(r=>tbody.appendChild(r));
+      ths.forEach(h=>h.classList.remove("sort-asc","sort-desc"));th.classList.add(asc?"sort-asc":"sort-desc");
+    };
+    th.onclick=doSort;th.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();doSort();}};
+  });
+}
+function tableCSV(table){
+  return [...table.querySelectorAll("tr")].map(tr=>[...tr.children].map(c=>{
+    let t=(c.getAttribute("data-sort")!=null&&/^[\d.\-]+$/.test(c.getAttribute("data-sort"))?c.getAttribute("data-sort"):c.textContent).replace(/\s+/g," ").trim();
+    return /[",\n]/.test(t)?'"'+t.replace(/"/g,'""')+'"':t;}).join(",")).join("\n");
+}
+function downloadCSV(table,name){
+  const blob=new Blob([tableCSV(table)],{type:"text/csv;charset=utf-8"});
+  const url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+}
+function coreProps(){return PARCELS.features.map(f=>f.properties).filter(p=>p.core);}
+function renderRoster(root){
+  vhead(root,"Real estate · Development","Recent development in the core",
+    "Core parcels built in 2005 or later with at least 10 residential units or $3M in assessed value, from the City of Syracuse 2025 Q3 roll, newest first. \"Owner of record\" is the entity on the tax roll — usually the developer or its holding LLC. Unit counts are residential units, not beds. Assessed value is below market: SU's own purchases have run about 6× assessed, and the City's first revaluation in roughly 30 years was underway in 2024–25.");
+  const recent=coreProps().filter(p=>p.year&&p.year>=2005&&((p.units||0)>=10||(p.av||0)>=3e6))
+    .sort((a,b)=>(b.year-a.year)||((b.av||0)-(a.av||0)));
+  const totUnits=recent.reduce((s,p)=>s+(p.units||0),0);
+  const totAv=recent.reduce((s,p)=>s+(p.av||0),0);
+  const nNat=recent.filter(p=>p.ownerScope==="national").length;
+  root.appendChild(el("div",{class:"miniglance"},
+    stat(fmtInt(recent.length),"buildings (2005+)"),
+    stat(fmtInt(totUnits),"residential units"),
+    stat("$"+(totAv/1e6).toFixed(0)+"M","assessed value"),
+    stat(nNat+"","out-of-state–owned")));
+  const t=el("table",{class:"dtable"});
+  t.appendChild(el("thead",{},el("tr",{},th("Yr"),th("Address"),th("Owner of record"),th("Base"),
+    el("th",{class:"num"},"Units"),el("th",{class:"num"},"Assessed"),th("Zone"),th("Use"))));
+  const tb=el("tbody",{});
+  recent.forEach(p=>{
+    const sc=OWNER_SHORT_SCOPE[p.ownerScope]||"";
+    tb.appendChild(el("tr",{},
+      el("td",{class:"yr","data-sort":p.year},p.year),
+      td(p.addr||"—"),
+      el("td",{"data-sort":(p.owner||"").toLowerCase()},el("span",{},p.owner||"—"),ownerTagFor(p)),
+      td(el("span",{class:"muted"},sc)),
+      el("td",{class:"num","data-sort":p.units||0},p.units?fmtInt(p.units):"—"),
+      el("td",{class:"num","data-sort":p.av||0},fmtMoney(p.av)),
+      td(el("span",{class:"muted"},p.zone||"—")),
+      td(el("span",{class:"muted"},p.landUse||"—"))));
+  });
+  t.appendChild(tb);
+  finishTable(root,t,"syracuse-development-roster.csv");
+  root.appendChild(el("p",{class:"hint",style:"margin-top:10px"},
+    "Source: City of Syracuse Parcel Map (2025 Q3). One row per tax parcel; a single building can span parcels. Named projects (The Standard, Theory, Park Point, The Coda) also appear as ◆ pins on the Map lens with linked facts."));
+  // named projects with fact-level detail
+  const named=(DATA.places||[]).filter(pl=>pl.type==="building"&&(pl.factIds||[]).length);
+  if(named.length){
+    root.appendChild(el("h3",{class:"h"},"Named projects — with sourced detail"));
+    root.appendChild(el("div",{class:"sublabel"},"beds, cost, developer and more, from the section files"));
+    named.forEach(pl=>{
+      const fs=(pl.factIds||[]).map(id=>DATA.facts.find(f=>f.id===id)).filter(Boolean).slice(0,6);
+      const card=el("div",{class:"card pad",style:"margin-bottom:10px"});
+      card.appendChild(el("div",{style:"display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"},
+        el("b",{style:"font-size:15px"},pl.name),
+        el("span",{class:"sxlink",onclick:()=>{go("map");}},"see on map"),
+        pl.sections&&pl.sections.length?el("span",{class:"sxlink",onclick:()=>go("s"+pl.sections[0])},"§"+pl.sections[0]):null));
+      if(pl.note)card.appendChild(el("div",{class:"muted",style:"font-size:12.5px;margin-top:3px"},pl.note));
+      if(fs.length){const fl=el("div",{class:"factlist",style:"margin-top:6px"});fs.forEach(f=>fl.appendChild(factRow(f)));card.appendChild(fl);}
+      root.appendChild(card);
+    });
+  }
+}
+const OWNER_SHORT_SCOPE={local:"Local (CNY)",nyother:"NY, elsewhere",national:"Out-of-state",na:"Institutional"};
+function ownerTagFor(p){
+  if(p.ownerClass!=="private"){return el("span",{class:"tag-own",style:"background:"+OWNER_COLORS[p.ownerClass],title:OWNER_LABELS[p.ownerClass]},
+    p.ownerClass==="su"?"SU":p.ownerClass==="hospital"?"HOSP":p.ownerClass==="government"?"GOV":"NP");}
+  return null;
+}
+
+/* ---------- landlord / ownership analysis (from the parcel roll) ---------- */
+function renderLandlord(root){
+  vhead(root,"Real estate · Ownership","Who owns the core",
+    "Ownership of the three core neighborhoods (University Hill, the University Neighborhood and Westcott — City of Syracuse neighborhood polygons), aggregated from the City of Syracuse 2025 Q3 roll by owner of record. \"Absentee\" and \"local\" are inferred from each owner's mailing city (a proxy, not a legal tenure record). Assessed value understates market value — treat shares as more reliable than dollar levels.");
+  const feats=coreProps();
+  const totAv=feats.reduce((s,p)=>s+(p.av||0),0)||1;
+  // class shares
+  const byClass={};for(const p of feats){(byClass[p.ownerClass]=byClass[p.ownerClass]||0);byClass[p.ownerClass]+=p.av||0;}
+  const priv=feats.filter(p=>p.ownerClass==="private");
+  const privAv=priv.reduce((s,p)=>s+(p.av||0),0)||1;
+  const absAv=priv.filter(p=>p.ownerScope==="national"||p.ownerScope==="nyother").reduce((s,p)=>s+(p.av||0),0);
+  const owners={};for(const p of feats){const k=(p.owner||"—").trim();(owners[k]=owners[k]||{n:0,units:0,av:0,cls:p.ownerClass,scope:p.ownerScope,city:p.ownerCity});
+    owners[k].n++;owners[k].units+=p.units||0;owners[k].av+=p.av||0;}
+  const nPrivOwners=Object.values(owners).filter(o=>o.cls==="private").length;
+  root.appendChild(el("div",{class:"miniglance"},
+    stat((100*(byClass.su||0)/totAv).toFixed(0)+"%","SU-owned value"),
+    stat((100*privAv/totAv).toFixed(0)+"%","privately owned"),
+    stat((100*absAv/privAv).toFixed(0)+"%","of private value absentee"),
+    stat(fmtInt(nPrivOwners),"distinct private owners")));
+  // ownership-class share bar
+  root.appendChild(el("div",{class:"flabel"},"Core assessed value by owner type"));
+  const order=["su","hospital","government","nonprofit","private"];
+  const bar=el("div",{class:"sharebar"});
+  order.forEach(k=>{const v=byClass[k]||0;if(v<=0)return;const pct=100*v/totAv;
+    bar.appendChild(el("div",{class:"seg",style:"flex:"+pct+" 0 0;background:"+OWNER_COLORS[k],title:OWNER_LABELS[k]+" · "+pct.toFixed(1)+"%"},pct>7?Math.round(pct)+"%":""));});
+  root.appendChild(bar);
+  const key=el("div",{class:"sharekey"});
+  order.forEach(k=>{if((byClass[k]||0)<=0)return;key.appendChild(el("span",{},el("i",{style:"background:"+OWNER_COLORS[k]}),OWNER_LABELS[k]+" "+(100*(byClass[k]||0)/totAv).toFixed(1)+"%"));});
+  root.appendChild(key);
+  // private value: local vs national
+  root.appendChild(el("div",{class:"flabel"},"Private value — local vs. absentee"));
+  const scOrder=["local","nyother","national"];
+  const bar2=el("div",{class:"sharebar"});
+  scOrder.forEach(k=>{const v=priv.filter(p=>p.ownerScope===k).reduce((s,p)=>s+(p.av||0),0);if(v<=0)return;const pct=100*v/privAv;
+    bar2.appendChild(el("div",{class:"seg",style:"flex:"+pct+" 0 0;background:"+SCOPE_COLORS[k],title:SCOPE_LABELS[k]+" · "+pct.toFixed(1)+"%"},pct>7?Math.round(pct)+"%":""));});
+  root.appendChild(bar2);
+  const key2=el("div",{class:"sharekey"});
+  scOrder.forEach(k=>{const v=priv.filter(p=>p.ownerScope===k).reduce((s,p)=>s+(p.av||0),0);if(v<=0)return;
+    key2.appendChild(el("span",{},el("i",{style:"background:"+SCOPE_COLORS[k]}),SCOPE_LABELS[k]+" "+(100*v/privAv).toFixed(1)+"%"));});
+  root.appendChild(key2);
+  // largest owners table
+  root.appendChild(el("h3",{class:"h"},"Largest owners in the core"));
+  root.appendChild(el("div",{class:"sublabel"},"by number of parcels held · top 25"));
+  const rows=Object.entries(owners).filter(([k])=>k!=="—").sort((a,b)=>b[1].n-a[1].n||b[1].av-a[1].av).slice(0,25);
+  const maxN=rows.length?rows[0][1].n:1;
+  const t=el("table",{class:"dtable"});
+  t.appendChild(el("thead",{},el("tr",{},th("Owner of record"),th("Type"),th("Base"),
+    el("th",{class:"num"},"Parcels"),th(""),el("th",{class:"num"},"Units"),el("th",{class:"num"},"Assessed"))));
+  const tb=el("tbody",{});
+  rows.forEach(([name,o])=>{
+    const bw=Math.max(6,100*o.n/maxN);
+    tb.appendChild(el("tr",{},
+      el("td",{"data-sort":name.toLowerCase()},name),
+      td(el("span",{class:"tag-own",style:"background:"+(OWNER_COLORS[o.cls]||"#999")},
+        o.cls==="su"?"SU":o.cls==="private"?"PRIV":o.cls.slice(0,4).toUpperCase())),
+      el("td",{},el("span",{class:"muted"},o.cls==="private"?(OWNER_SHORT_SCOPE[o.scope]||""):"—"),
+        o.city?el("div",{class:"muted",style:"font-size:11px"},o.city):null),
+      el("td",{class:"num","data-sort":o.n},fmtInt(o.n)),
+      el("td",{"data-sort":o.n},el("div",{class:"ownbar"},el("i",{style:"width:"+bw+"%;background:"+(OWNER_COLORS[o.cls]||"#999")}))),
+      el("td",{class:"num","data-sort":o.units||0},o.units?fmtInt(o.units):"—"),
+      el("td",{class:"num","data-sort":o.av||0},fmtMoney(o.av))));
+  });
+  t.appendChild(tb);
+  finishTable(root,t,"syracuse-core-owners.csv");
+  // linked facts on named landlords / violations / tenure
+  const kw=["absentee","owner-occup","code violation","rent from ben","tupper","osuchowski","landlord","rental registry"];
+  const lf=DATA.facts.filter(f=>{const s=(f.statement||"").toLowerCase();return kw.some(k=>s.includes(k));})
+    .filter((f,i,a)=>a.findIndex(x=>x.id===f.id)===i).slice(0,14);
+  if(lf.length){
+    root.appendChild(el("h3",{class:"h"},"On landlords, tenure & enforcement — sourced facts"));
+    const fl=el("div",{class:"factlist"});lf.forEach(f=>fl.appendChild(factRow(f)));root.appendChild(fl);
+  }
+}
+
+/* ---------- search ---------- */
+function renderSearch(root){
+  vhead(root,"Search","Search the database",DATA.facts.length+" facts across five sections. Filter by section and evidence tag; click a result to open it in context.");
+  let secF=null,tagF=null;
+  const input=el("input",{type:"search",placeholder:"Search facts, values, sources, questions…",value:state.q||""});
+  root.appendChild(el("div",{class:"searchbar"},input));
+  const chips=el("div",{class:"fchips"});root.appendChild(chips);
+  const count=el("div",{class:"hint",style:"margin-bottom:8px"});root.appendChild(count);
+  const results=el("div",{});root.appendChild(results);
+  function mkchip(lab,isOn,tog){const b=el("button",{class:"fchip"+(isOn()?" on":"")},lab);
+    b.onclick=()=>{tog();paintChips();draw();};return b;}
+  function paintChips(){chips.innerHTML="";
+    [2,3,4,7,10].forEach(n=>chips.appendChild(mkchip("§"+n,()=>secF===n,()=>secF=secF===n?null:n)));
+    ["V","R","E"].forEach(t=>chips.appendChild(mkchip(t,()=>tagF===t,()=>tagF=tagF===t?null:t)));}
+  function draw(){results.innerHTML="";const q=(input.value||"").toLowerCase().trim();
+    let items=DATA.facts.filter(f=>(!secF||f.section===secF)&&(!tagF||f.tag===tagF));
+    if(q)items=items.filter(f=>((f.statement||"")+" "+(f.value||"")+" "+(f.source||"")+" "+(f.note||"")+" "+(f.topic||"")).toLowerCase().includes(q));
+    count.textContent=items.length+" facts"+(q?' for "'+q+'"':"");
+    items.slice(0,250).forEach(f=>{
+      const r=el("div",{class:"sresult",onclick:()=>openFact(f)});
+      r.appendChild(el("div",{},el("span",{class:"st"},f.statement),f.value?el("b",{class:"mono",style:"margin-left:8px"},f.value):null));
+      r.appendChild(el("div",{class:"meta",style:"margin-top:5px"},chip(f.tag),el("span",{class:"muted"},"§"+f.section+(f.subq?" · "+f.subq:"")+" · "+(f.source||""))));
+      results.appendChild(r);});
+    if(items.length>250)results.appendChild(el("div",{class:"hint",style:"margin-top:8px"},"showing first 250 — refine to narrow."));}
+  input.addEventListener("input",()=>{state.q=input.value;draw();});
+  paintChips();draw();input.focus();
+}
+function openFact(f){go("s"+f.section);setTimeout(()=>{const q=document.getElementById("q-"+f.subq);
+  if(q){q.classList.remove("closed");}const t=document.getElementById("f-"+f.id)||q;
+  if(t){t.scrollIntoView({behavior:"smooth",block:"center"});t.style.transition="background .2s";t.style.background="color-mix(in srgb,var(--accent) 14%,transparent)";
+    setTimeout(()=>t.style.background="",1400);}},80);}
+
+/* ---------- registers ---------- */
+function renderSources(root){
+  vhead(root,"Register · Sources","Primary sources",DATA.sources.length+" load-bearing sources. Full inline citations live in the section files.");
+  const t=el("table",{class:"reg"});
+  t.appendChild(el("thead",{},el("tr",{},th("Source"),th("Publisher"),th("Type"),th("Link"))));
+  const tb=el("tbody",{});
+  DATA.sources.forEach(s=>tb.appendChild(el("tr",{},
+    td(s.title),td(el("span",{class:"muted"},s.publisher||"")),
+    td(el("span",{class:"verdict"},s.type||"")),
+    td(s.url?el("a",{href:(s.url.startsWith("http")?s.url:"https://"+s.url),target:"_blank",rel:"noopener"},"open ↗"):el("span",{class:"muted"},"—")))));
+  t.appendChild(tb);root.appendChild(el("div",{class:"scroller"},t));
+}
+function renderCorrections(root){
+  vhead(root,"Register · Corrections","Corrected & superseded claims",
+    DATA.corrections.length+" claims found false, stale, or mis-framed in the audit — with the fix. Do not cite the struck version.");
+  const t=el("table",{class:"reg"});
+  t.appendChild(el("thead",{},el("tr",{},th("#"),th("§"),th("Claim"),th("Verdict"),th("Correction"),th("Source"))));
+  const tb=el("tbody",{});
+  DATA.corrections.forEach(c=>tb.appendChild(el("tr",{},
+    td(el("span",{class:"mono"},c.id||"")),
+    td("§"+(c.section||"")),
+    td(el("span",{class:"strike"},c.claim)),
+    td(el("span",{class:"verdict"},c.verdict||"")),
+    td(c.fix),
+    td(el("span",{class:"muted"},c.source||"")))));
+  t.appendChild(tb);root.appendChild(el("div",{class:"scroller"},t));
+}
+function renderOpen(root){
+  const res=DATA.resolved||[];
+  vhead(root,"Register · Open items","Open items & gaps",
+    "What's still unverified or unpublished — never guessed."+(res.length?" A research sweep just closed "+res.length+" of these with primary sources (shown first).":""));
+  if(res.length){
+    root.appendChild(el("h3",{class:"h"},"Closed by the latest research sweep · "+res.length));
+    res.forEach(r=>root.appendChild(el("div",{class:"card pad",style:"margin-bottom:8px;border-left:3px solid var(--v)"},
+      el("div",{},el("b",{},(r.item||("§"+r.section))+" — "),r.statement,r.value?el("b",{class:"mono",style:"margin-left:6px"},String(r.value)):null),
+      el("div",{class:"muted",style:"font-size:12px;margin-top:5px"},"✓ "+(r.source||"")+(r.url?" · "+r.url:"")))));
+  }
+  root.appendChild(el("h3",{class:"h"},"Still open"));
+  if(res.length)root.appendChild(el("p",{class:"muted",style:"font-size:12.5px;margin:2px 0 6px"},"The pre-sweep list below; the "+res.length+" items above came from it and are now answered."));
+  const labels={red:"Load-bearing",yellow:"Useful detail",green:"Minor / polish"};
+  ["red","yellow","green"].forEach(pr=>{const items=DATA.openItems.filter(o=>o.priority===pr);if(!items.length)return;
+    root.appendChild(el("div",{class:"sublabel"},labels[pr]+" · "+items.length));
+    items.forEach(o=>root.appendChild(el("div",{class:"card pad",style:"margin-bottom:8px"},
+      el("div",{},el("b",{},"§"+(o.section||"")+" "),o.statement),
+      o.whereToGet?el("div",{class:"muted",style:"font-size:12px;margin-top:4px"},"→ "+o.whereToGet):null)));});
+}
+
+/* ---------- charts (Lens C) ---------- */
+const SERIES_COLORS=["#3b5bdb","#e6550d","#2f9e54","#c9871f","#8856a7","#0b8fa3"];
+/* instant tooltip (no hover delay) */
+let _tip=null;
+function tipEl(){if(!_tip){_tip=el("div",{id:"charttip"});document.body.appendChild(_tip);}return _tip;}
+function showTip(ev,label,valueLine){const t=tipEl();
+  t.innerHTML="";if(label)t.appendChild(el("span",{class:"tt-lab"},label));
+  t.appendChild(document.createTextNode(valueLine));
+  t.classList.add("on");moveTip(ev);}
+function showTipRows(ev,title,rows){const t=tipEl();t.innerHTML="";
+  if(title)t.appendChild(el("div",{class:"tt-title"},title));
+  rows.forEach(r=>{const line=el("div",{class:"tt-row"});
+    if(r.color)line.appendChild(el("span",{class:"tt-sw",style:"background:"+r.color}));
+    if(r.label)line.appendChild(el("span",{class:"tt-k"},r.label));
+    line.appendChild(el("span",{class:"tt-v"},r.value));
+    t.appendChild(line);});
+  t.classList.add("on");moveTip(ev);}
+function moveTip(ev){const t=tipEl();const pad=14;let x=ev.clientX+pad,y=ev.clientY+pad;
+  const w=t.offsetWidth||120,h=t.offsetHeight||28;
+  if(x+w>window.innerWidth-6)x=ev.clientX-w-pad;if(y+h>window.innerHeight-6)y=ev.clientY-h-pad;
+  t.style.left=x+"px";t.style.top=y+"px";}
+function hideTip(){if(_tip)_tip.classList.remove("on");}
+function tipMark(node,label,valueLine){
+  node.style.cursor="default";
+  node.addEventListener("pointerenter",e=>showTip(e,label,valueLine));
+  node.addEventListener("pointermove",moveTip);
+  node.addEventListener("pointerleave",hideTip);
+}
+function fmtNum(v){const a=Math.abs(v);if(a>=1e9)return(v/1e9).toFixed(1)+"B";if(a>=1e6)return(v/1e6).toFixed(1)+"M";
+  if(a>=1e3)return(v/1e3).toFixed(a>=1e4?0:1)+"k";if(a<10&&a%1!==0)return v.toFixed(1);return String(Math.round(v));}
+function trunc(s,n){s=String(s);return s.length>n?s.slice(0,n-1)+"…":s;}
+function xticks(years){const u=[...new Set(years)].sort((a,b)=>a-b);if(u.length<=6)return u;
+  const out=[];for(let i=0;i<5;i++)out.push(u[Math.round(i*(u.length-1)/4)]);return [...new Set(out)];}
+function lineChart(lines,opts){
+  opts=opts||{};const multi=lines.length>1;
+  const W=380,H=196,L=48,R=16,T=14,B=30;
+  const all=lines.flatMap(l=>l.points);
+  const xs=all.map(p=>p.year),ys=all.map(p=>p.value);
+  let x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
+  if(opts.zeroBase)y0=0; else if(y0>0&&(y1-y0)/y1<0.55)y0=Math.max(0,y0-(y1-y0)*0.2);
+  if(y0===y1){y0-=1;y1+=1;}
+  const px=x=>L+(x1===x0?0.5:(x-x0)/(x1-x0))*(W-L-R);
+  const py=y=>H-B-(y1===y0?0.5:(y-y0)/(y1-y0))*(H-T-B);
+  const svg=svgEl("svg",{viewBox:"0 0 "+W+" "+H});
+  for(let i=0;i<=3;i++){const yv=y0+(y1-y0)*i/3,yy=py(yv);
+    svg.appendChild(svgEl("line",{class:"gl",x1:L,y1:yy,x2:W-R,y2:yy}));
+    const t=svgEl("text",{class:"axlab",x:L-6,y:yy+3,"text-anchor":"end"});t.textContent=fmtNum(yv);svg.appendChild(t);}
+  svg.appendChild(svgEl("line",{class:"axline",x1:L,y1:H-B,x2:W-R,y2:H-B}));
+  xticks(xs).forEach(xv=>{const t=svgEl("text",{class:"axlab",x:px(xv),y:H-B+14,"text-anchor":"middle"});t.textContent=xv;svg.appendChild(t);});
+  lines.forEach((ln,li)=>{const col=ln.color||SERIES_COLORS[li%SERIES_COLORS.length];
+    const pts=ln.points.slice().sort((a,b)=>a.year-b.year);
+    let d="";pts.forEach((p,i)=>{d+=(i?"L":"M")+px(p.year).toFixed(1)+" "+py(p.value).toFixed(1);});
+    svg.appendChild(svgEl("path",{class:"cline",d:d,stroke:col}));
+    pts.forEach(p=>svg.appendChild(svgEl("circle",{class:"cdot",cx:px(p.year),cy:py(p.value),r:3,fill:col})));
+    if(!multi&&pts.length){[pts[0],pts[pts.length-1]].forEach((p,i)=>{
+      const t=svgEl("text",{class:"vlabel",x:px(p.year)+(i?-2:2),y:py(p.value)-6,"text-anchor":i?"end":"start"});
+      t.textContent=fmtNum(p.value);svg.appendChild(t);});}
+  });
+  // crosshair hover — the ENTIRE plot is hoverable; it snaps to the nearest year
+  // and shows every series' value there (no thin per-dot targets to miss).
+  const guide=svgEl("line",{class:"cguide",x1:L,y1:T,x2:L,y2:H-B,opacity:0});svg.appendChild(guide);
+  const hl=lines.map((ln,li)=>{const col=ln.color||SERIES_COLORS[li%SERIES_COLORS.length];
+    const c=svgEl("circle",{class:"chl",r:4.6,fill:col,stroke:"var(--panel)","stroke-width":1.6,opacity:0});
+    svg.appendChild(c);return{c,ln,col};});
+  const uxs=[...new Set(xs)].sort((a,b)=>a-b);
+  const overlay=svgEl("rect",{x:L,y:T,width:Math.max(1,W-L-R),height:Math.max(1,H-T-B),fill:"transparent"});
+  overlay.style.cursor="crosshair";
+  overlay.addEventListener("pointermove",ev=>{
+    const rect=svg.getBoundingClientRect();const vbx=(ev.clientX-rect.left)/rect.width*W;
+    let best=uxs[0],bd=1e9;for(const y of uxs){const dd=Math.abs(px(y)-vbx);if(dd<bd){bd=dd;best=y;}}
+    guide.setAttribute("x1",px(best));guide.setAttribute("x2",px(best));guide.setAttribute("opacity",1);
+    const rows=[];
+    hl.forEach(h=>{const p=h.ln.points.find(pt=>pt.year===best);
+      if(p){h.c.setAttribute("cx",px(best));h.c.setAttribute("cy",py(p.value));h.c.setAttribute("opacity",1);
+        rows.push({label:multi?h.ln.label:null,color:multi?h.col:null,value:fmtNum(p.value)+(opts.unit?" "+opts.unit:"")});}
+      else h.c.setAttribute("opacity",0);});
+    if(rows.length)showTipRows(ev,String(best),rows);else hideTip();
+  });
+  overlay.addEventListener("pointerleave",()=>{guide.setAttribute("opacity",0);hl.forEach(h=>h.c.setAttribute("opacity",0));hideTip();});
+  svg.appendChild(overlay);
+  return svg;}
+function barSVG(pts,unit){
+  const cats=pts.map(p=>({lab:(p.label!=null?p.label:p.year),v:p.value})).filter(c=>typeof c.v==="number");
+  const W=380,rowH=24,T=6,R=52;
+  const L=Math.min(160,Math.max(66,Math.max(...cats.map(c=>String(c.lab).length))*5.6));
+  const H=T+cats.length*rowH+6,vmax=Math.max(...cats.map(c=>c.v),0)||1;
+  const svg=svgEl("svg",{viewBox:"0 0 "+W+" "+H});
+  cats.forEach((c,i)=>{const y=T+i*rowH,bw=Math.max(1,(c.v/vmax)*(W-L-R));
+    const lab=svgEl("text",{class:"axlab",x:L-7,y:y+rowH/2+3,"text-anchor":"end"});lab.textContent=trunc(c.lab,26);svg.appendChild(lab);
+    const rect=svgEl("rect",{class:"cbar",x:L,y:y+4,width:bw,height:rowH-9,rx:2});
+    tipMark(rect,null,c.lab+": "+fmtNum(c.v)+(unit?" "+unit:""));svg.appendChild(rect);
+    const vt=svgEl("text",{class:"axlab",x:L+bw+5,y:y+rowH/2+3});vt.textContent=fmtNum(c.v);svg.appendChild(vt);});
+  return svg;}
+function chartSecTag(sec){return el("span",{class:"chart-sec",title:"Go to §"+sec,onclick:e=>{e.stopPropagation();go("s"+sec);}},"§"+sec);}
+function buildChart(s,showSec){
+  const fig=el("figure",{class:"chart"});
+  if(showSec&&s.section)fig.appendChild(chartSecTag(s.section));
+  const pts=(s.points||[]).filter(p=>typeof p.value==="number");
+  if(!pts.length){fig.appendChild(el("div",{class:"muted",style:"font-size:12px;padding:20px"},"no plottable points"));}
+  else fig.appendChild((s.kind==="bar"||s.kind==="comparison")?barSVG(pts,s.unit):lineChart([{label:s.label,points:pts}],{unit:s.unit}));
+  fig.appendChild(el("figcaption",{},s.label+(s.unit?" ("+s.unit+")":"")));
+  fig.appendChild(el("div",{class:"csrc"},(s.source||"")+(s.note?" · "+s.note:"")));
+  return fig;}
+function shortLabel(l){return String(l).replace(/^City of Syracuse:?\s*/i,"").replace(/\s*\(non-Hispanic\)/i," NH")
+  .replace(/\s*share$/i,"").replace(/Median (HH|household) income (slope )?(for )?/i,"")
+  .replace(/University Hill.*core population.*/i,"University Hill core").replace(/.*population by decade/i,"City of Syracuse");}
+function comboFigure(c){
+  const fig=el("figure",{class:"chart wide"});
+  fig.appendChild(lineChart(c.lines,{unit:c.unit,zeroBase:c.zeroBase}));
+  fig.appendChild(el("figcaption",{},c.title+(c.unit?" ("+c.unit+")":"")));
+  const lg=el("div",{class:"clegend"});
+  c.lines.forEach((ln,i)=>lg.appendChild(el("span",{},el("i",{style:"background:"+(ln.color||SERIES_COLORS[i%SERIES_COLORS.length])}),ln.label)));
+  fig.appendChild(lg);
+  if(c.source)fig.appendChild(el("div",{class:"csrc"},c.source));
+  return fig;}
+function comparisonsFor(n){
+  const out=[],S=DATA.series;
+  const combo=(title,arr,unit,zeroBase)=>{arr=arr.filter(s=>(s.points||[]).filter(p=>typeof p.value==="number").length>=2);
+    if(arr.length<2)return;
+    const lines=arr.map((s,i)=>({label:shortLabel(s.label),color:SERIES_COLORS[i%SERIES_COLORS.length],points:s.points.filter(p=>typeof p.value==="number")}));
+    const src=[...new Set(arr.map(s=>s.source).filter(Boolean))].slice(0,2).join("; ");
+    out.push({title,lines,unit,zeroBase,source:src});};
+  if(n===3){
+    combo("City racial & ethnic composition — share",S.filter(s=>/(White|Black|Hispanic)/i.test(s.label)&&/share/i.test(s.label)),"% of population",true);
+    // Same composition in absolute people: share × City population.
+    const pop=S.find(s=>/population by decade/i.test(s.label));
+    const shW=S.find(s=>/White \(non-Hispanic\) share/i.test(s.label)),
+          shB=S.find(s=>/Black \(non-Hispanic\) share/i.test(s.label)),
+          shH=S.find(s=>/Hispanic share/i.test(s.label));
+    if(pop&&shW&&shB&&shH){
+      const popAt=y=>{const p=pop.points.find(pt=>pt.year===y);return p?p.value:null;};
+      const yrs=[2000,2010,2020,2024];
+      const mk=(lab,ser,ci)=>({label:lab,color:SERIES_COLORS[ci],points:yrs.map(y=>{const s=ser.points.find(pt=>pt.year===y),pv=popAt(y);return(s&&pv!=null)?{year:y,value:Math.round(s.value/100*pv)}:null;}).filter(Boolean)});
+      out.push({title:"City racial & ethnic composition — people (estimated)",unit:"people",zeroBase:true,
+        lines:[mk("White (NH)",shW,0),mk("Black (NH)",shB,1),mk("Hispanic",shH,2)],
+        source:"Estimated as decennial / ACS share × City population. Shares are rounded, so counts are approximate."});
+    }
+    combo("SU enrollment — undergraduate vs. graduate (NYSED)",S.filter(s=>/NYSED/i.test(s.label)&&/(undergrad|graduate)/i.test(s.label)),"students",true);
+    combo("City population vs. University Hill core",S.filter(s=>/population by decade|core population/i.test(s.label)),"residents",true);
+    combo("Median household income by tract",S.filter(s=>/income/i.test(s.label)&&/tract/i.test(s.label)),"$");
+  }
+  if(n===7)combo("For-sale listings, Syracuse metro",S.filter(s=>/active for-sale listings/i.test(s.label)),"listings",true);
+  return out;}
+
+/* ---------- timeline (events only) ---------- */
+const MONTHS=["","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const SEC_TITLE={2:"Planning & Zoning",3:"District Context",4:"Governance",7:"Real Estate",10:"Current Issues"};
+function dateChip(e){return e.month?MONTHS[e.month]+" "+e.year:String(e.year);}
+function renderTimeline(root){
+  vhead(root,"Dated events","Timeline",
+    DATA.chronology.length+" dated events across the five sections. Filter by section; every write-up is shown in place. Charts and trends are on the Charts tab.");
+  let secF=null;
+  const chips=el("div",{class:"fchips"});
+  const tl=el("div",{});
+  [["All",null],["§2",2],["§3",3],["§4",4],["§7",7],["§10",10]].forEach(([lab,n],i)=>{
+    const b=el("button",{class:"fchip"+(i===0?" on":"")},lab);
+    b.onclick=()=>{secF=n;[...chips.children].forEach(c=>c.classList.remove("on"));b.classList.add("on");drawTL();};
+    chips.appendChild(b);});
+  root.appendChild(chips);root.appendChild(tl);
+  function drawTL(){tl.innerHTML="";
+    const evs=DATA.chronology.filter(e=>!secF||e.section===secF).slice()
+      .sort((a,b)=>(a.year-b.year)||((a.month||0)-(b.month||0)));
+    if(!evs.length){tl.appendChild(el("div",{class:"stub"},"No events for this section."));return;}
+    const byYear={};evs.forEach(e=>{(byYear[e.year]=byYear[e.year]||[]).push(e);});
+    const wrap=el("div",{class:"tl2"});
+    Object.keys(byYear).sort((a,b)=>a-b).forEach(y=>{
+      const grp=el("div",{class:"tlgroup"},el("div",{class:"yr"},y));
+      byYear[y].forEach(e=>grp.appendChild(el("div",{class:"tlcard2"},
+        e.month?el("div",{class:"dchip"},dateChip(e)):null,
+        el("div",{class:"tt2"},el("span",{class:"ttl2"},e.title),
+          el("span",{class:"sx2",title:"Open §"+e.section,onclick:()=>go("s"+e.section)},"§"+e.section),chip(e.tag)),
+        e.writeup?el("div",{class:"wu2"},e.writeup):null)));
+      wrap.appendChild(grp);});
+    tl.appendChild(wrap);}
+  drawTL();
+}
+
+/* ---------- charts & trends (own page) ---------- */
+function renderCharts(root){
+  vhead(root,"Data series","Charts & trends",
+    "Every plottable series from the research. Comparison overlays come first — related series on one set of axes — then the individual series, grouped by section. Hover any point for its date and value.");
+  const comps=[...comparisonsFor(3),...comparisonsFor(7),...comparisonsFor(4),...comparisonsFor(10)];
+  if(comps.length){
+    root.appendChild(el("h3",{class:"h"},"Comparisons"));
+    root.appendChild(el("div",{class:"sublabel"},"related series overlaid on one chart"));
+    const cg=el("div",{class:"chartgrid"});comps.forEach(c=>cg.appendChild(comboFigure(c)));root.appendChild(cg);
+  }
+  [2,3,4,7,10].forEach(n=>{
+    const ser=DATA.series.filter(s=>s.section===n);
+    if(!ser.length)return;
+    root.appendChild(el("h3",{class:"h"},"§"+n+" · "+SEC_TITLE[n]));
+    const g=el("div",{class:"chartgrid"});ser.forEach(s=>g.appendChild(buildChart(s,false)));root.appendChild(g);
+  });
+}
+
+/* ---------- registers (combined: sources / corrections / open) ---------- */
+function renderRegisters(root){
+  const subs=[["sources","Sources",renderSources],["corrections","Corrections",renderCorrections],["open","Open items",renderOpen]];
+  const cur=state.regSub||(["sources","corrections","open"].includes(state.view)?state.view:"sources");
+  state.regSub=cur;
+  const bar=el("div",{class:"subtabs"});
+  const body=el("div",{});
+  subs.forEach(([id,lab,fn])=>{
+    const b=el("button",{class:"subtab"+(id===cur?" on":"")},lab);
+    b.onclick=()=>{state.regSub=id;[...bar.children].forEach(x=>x.classList.toggle("on",x===b));body.innerHTML="";fn(body);};
+    bar.appendChild(b);});
+  root.appendChild(bar);root.appendChild(body);
+  (subs.find(s=>s[0]===cur)[2])(body);
+}
+
+/* ---------- boot ---------- */
+buildTabs();
+(function(){const h=location.hash.replace(/^#/,"").split("=")[0];if(h)state.view=h;else state.view="overview";})();
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+src/data/_raw/
+src/dist/
+.claude/
+.DS_Store
