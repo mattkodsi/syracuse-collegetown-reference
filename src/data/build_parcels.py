@@ -9,10 +9,12 @@ Usage:
   python3 build_parcels.py [--refresh]
 """
 import json, sys, os, time, urllib.parse, urllib.request
+from collections import Counter, defaultdict
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 RAW = os.path.join(HERE, "_raw", "parcels_raw.geojson")
 OUT = os.path.join(HERE, "parcels.js")
+CORR = os.path.join(HERE, "owner_corrections.json")   # audit corrections keyed by owner string
 
 LAYER = ("https://services6.arcgis.com/bdPqSfflsdgFRVVM/arcgis/rest/services/"
          "Syracuse_Parcel_Map_(2025_Q3)_view/FeatureServer/0/query")
@@ -50,13 +52,21 @@ def owner_class(owner):
         return "private"
     if o.startswith("SYRACUSE UNIV") or "SYRACUSE UNIVERSITY" in o:
         return "su"
-    if any(k in o for k in HOSPITAL):
+    if any(k in o for k in HOSPITAL) and "HOSPITALITY" not in o:   # hotels are not hospitals
         return "hospital"
     if any(k in o for k in GOVERNMENT):
         return "government"
     if any(k in o for k in NONPROFIT):
         return "nonprofit"
     return "private"
+
+
+def load_corrections():
+    """Owner-class overrides from the September 11, 2026 ownership audit (owner_corrections.json)."""
+    if not os.path.exists(CORR):
+        return {}
+    d = json.load(open(CORR))
+    return {k.strip().upper(): v for k, v in d["by_owner"].items()}
 
 
 def parse_city_state(s):
@@ -133,6 +143,8 @@ def clean(v):
 
 
 def build(feats):
+    corr = load_corrections()
+    applied = Counter()
     out = []
     for f in feats:
         g = f.get("geometry")
@@ -141,6 +153,11 @@ def build(feats):
             continue
         owner = p.get("Owner")
         cls = owner_class(owner)
+        note = None
+        fix = corr.get((owner or "").strip().upper())
+        if fix:
+            cls, note = fix["ownerClass"], fix.get("note")
+            applied[(owner or "").strip().upper()] += 1
         scope = owner_scope(p.get("Add4_OwnCi"), cls)
         vac = (p.get("IPSVacant") or "").strip()
         tract = p.get("CT_2020")
@@ -152,6 +169,7 @@ def build(feats):
             "zone": clean(p.get("REZONE")), "zoneOld": clean(p.get("ZONE_DIST_")),
             "owner": clean(owner), "ownerFull": clean(p.get("OwnerFullA")),
             "ownerCity": clean(p.get("Add4_OwnCi")), "ownerClass": cls, "ownerScope": scope,
+            "ownerNote": note,
             "av": p.get("total_av") or 0, "landAv": p.get("land_av") or 0,
             "landUse": clean(p.get("LU_parcel")), "landUseCode": clean(p.get("LUC_parcel")),
             "units": p.get("n_ResUnits") or 0, "vacant": bool(vac and vac not in ("", " ")),
@@ -171,8 +189,11 @@ def build(feats):
         json.dump(fc, f, separators=(",", ":"))
         f.write(";\n")
 
-    from collections import Counter, defaultdict
     kb = os.path.getsize(OUT) / 1024
+    for k in corr:
+        if not applied.get(k):
+            print(f"  WARNING: correction for {k!r} matched no parcel")
+    print(f"  audit corrections applied: {sum(applied.values())} parcels across {len(applied)} owners: {dict(applied)}")
     core_n = sum(1 for x in out if x["properties"].get("core"))
     nh = Counter(x["properties"].get("nhood") for x in out if x["properties"].get("core"))
     print("  core parcels by neighborhood:", dict(nh))

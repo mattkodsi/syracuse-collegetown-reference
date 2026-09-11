@@ -1,0 +1,61 @@
+{
+  "note": "Owner-class corrections from the ownership audit of September 11, 2026 (02-syracuse-study/research/04-ownership-and-investment/llc-audit-2026-09-11/classification-corrections.csv). Keyed by the owner string as it appears on the City of Syracuse 2025 Q3 roll. Applied by build_parcels.py after the name rules; ownerScope is recomputed from the new class. The note is shown in the parcel record panel. Six further entries (SYR Hospitality Developers and five Upstate-named LLCs) are name-rule fixes the audit's non-llc.md flagged but did not adjudicate: the Upstate Prop/Properties Development family is kept as hospital (Upstate Medical affiliate lead).",
+  "by_owner": {
+    "NYS HOUSING FINANCE AGNCY": {
+      "ownerClass": "government",
+      "note": "Reclassified from private to government by the September 11, 2026 ownership audit. The NYS Housing Finance Agency is a state public agency. Beneficial and lease interests were not separately certified."
+    },
+    "ABBY LANE HOUSING CORP": {
+      "ownerClass": "nonprofit",
+      "note": "Reclassified from private to nonprofit by the September 11, 2026 ownership audit. ESF-hosted tax disclosures identify a nonprofit whose sole member was the ESF College Foundation."
+    },
+    "ESF COLLEGE FOUNDATION INC": {
+      "ownerClass": "nonprofit",
+      "note": "Reclassified from private to nonprofit by the September 11, 2026 ownership audit. A 501(c)(3) foundation, legally separate from the state college."
+    },
+    "DRUMLINS INC": {
+      "ownerClass": "su",
+      "note": "Reclassified from private to Syracuse University by the September 11, 2026 ownership audit. SU's FY2025 audited statements identify Drumlins as a taxable subsidiary."
+    },
+    "601 SOUTH CROUSE AVE LLC": {
+      "ownerClass": "su",
+      "note": "Reclassified from hospital to Syracuse University by the September 11, 2026 ownership audit. SU's FY2025 audited statements identify the company as wholly owned. The word Crouse in the street name had triggered the hospital rule."
+    },
+    "PEACE INC": {
+      "ownerClass": "nonprofit",
+      "note": "Reclassified from private to nonprofit by the September 11, 2026 ownership audit. PEACE Inc is a community action nonprofit."
+    },
+    "APPLE 9 HOSPITALITY OWNSHP INC": {
+      "ownerClass": "private",
+      "note": "Reclassified from hospital to private by the September 11, 2026 ownership audit. A hotel-owning subsidiary of Apple Hospitality REIT (Richmond, Virginia). Hospitality is not hospital."
+    },
+    "UPSTATE IMPORTS AUTO REPAIR-SY": {
+      "ownerClass": "private",
+      "note": "Reclassified from hospital to private by the September 11, 2026 ownership audit. An auto repair business caught by the Upstate name rule."
+    },
+    "SYR HOSPITALITY DEVELOPERS LLC": {
+      "ownerClass": "private",
+      "note": "Reclassified from hospital to private on September 11, 2026. The parcel is a hotel and the name rule had matched Hospitality to Hospital. The audit's entity review listed it as a strong correction candidate."
+    },
+    "UPSTATE UTOPIA LLC": {
+      "ownerClass": "private",
+      "note": "Reclassified from hospital to private on September 11, 2026. The audit's entity review found no hospital identity for this name and kept the hospital label only as an unverified hypothesis. Its controller is unresolved."
+    },
+    "EVERGREEN UPSTATE LLC": {
+      "ownerClass": "private",
+      "note": "Reclassified from hospital to private on September 11, 2026. The audit's entity review found no hospital identity for this name and kept the hospital label only as an unverified hypothesis. Its controller is unresolved."
+    },
+    "UPSTATE LLC": {
+      "ownerClass": "private",
+      "note": "Reclassified from hospital to private on September 11, 2026. The audit's entity review found no hospital identity for this name and kept the hospital label only as an unverified hypothesis. Its controller is unresolved."
+    },
+    "UPSTATE RE HOLDINGS LLC": {
+      "ownerClass": "private",
+      "note": "Reclassified from hospital to private on September 11, 2026. The audit's entity review found no hospital identity for this name and kept the hospital label only as an unverified hypothesis. Its controller is unresolved."
+    },
+    "UPSTATE UPSTART, LLC": {
+      "ownerClass": "private",
+      "note": "Reclassified from hospital to private on September 11, 2026. The audit's entity review found no hospital identity for this name and kept the hospital label only as an unverified hypothesis. Its controller is unresolved."
+    }
+  }
+}

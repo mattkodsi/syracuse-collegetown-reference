@@ -101,6 +101,7 @@ main{max-width:1240px;margin:0 auto;padding:22px 18px 80px}
 .legend .lg-row{display:flex;align-items:center;gap:6px;margin:2px 0}
 .legend .sw{width:12px;height:12px;border-radius:3px;flex:none;border:1px solid var(--map-stroke)}
 .legend .lg-title{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-bottom:4px}
+.lg-note{font-size:11px;line-height:1.35;color:var(--ink-2);margin:2px 0 6px;max-width:230px}
 .parcel{stroke:var(--map-stroke);stroke-width:.4;transition:opacity .1s}
 .parcel:hover{stroke:var(--sel);stroke-width:1.1}
 .parcel.sel{stroke:var(--sel);stroke-width:1.6}
@@ -461,7 +462,7 @@ const ZONE_COLORS={R1:"#c7e9b4",R2:"#a1d99b",R3:"#74c476",R4:"#41ab5d",R5:"#238b
 const OWNER_COLORS={su:"#e6550d",hospital:"#3182bd",government:"#756bb1",nonprofit:"#31a354",private:"#c7ccd1"};
 const OWNER_LABELS={su:"Syracuse University",hospital:"Hospital / medical",government:"Government / public",nonprofit:"Church / nonprofit",private:"Private owner"};
 const SCOPE_COLORS={national:"#d73027",nyother:"#fc8d59",local:"#91bfdb",na:"#e5e7eb",unknown:"#c7ccd1"};
-const SCOPE_LABELS={national:"Out-of-state owner",nyother:"NY, outside CNY",local:"Local (CNY)",na:"Institutional / SU",unknown:"Unclassified owner"};
+const SCOPE_LABELS={national:"Tax bill mailed out of state",nyother:"Tax bill mailed elsewhere in New York",local:"Tax bill mailed to Central New York",na:"Not private (SU, hospital, government, nonprofit)",unknown:"Mailing address not parsed"};
 const LU_COLORS={residential:"#a1d99b",multifamily:"#238b45",university:"#6a51a3",commercial:"#fd8d3c",
   institutional:"#3182bd",parking:"#969696",vacant:"#d73027",other:"#d9d9d9"};
 const LU_LABELS={residential:"1–2 family residential",multifamily:"Apartments / multi-family",university:"College / university",
@@ -493,7 +494,7 @@ function colorFor(p,layer){
 
 /* ---------- map render ---------- */
 let mapG=null,zoom={k:1,x:0,y:0};
-const MAP_LAYERS=[["ownerClass","Ownership"],["ownerScope","Local vs national"],["zone","Zoning"],
+const MAP_LAYERS=[["ownerClass","Ownership"],["ownerScope","Tax mailing address"],["zone","Zoning"],
   ["av","Assessed value"],["year","Building age"],["landuse","Land use"],["vacant","Vacancy"]];
 function colorLayerRow(onChange){
   const lr=el("div",{class:"layerrow"});
@@ -750,8 +751,8 @@ function renderInfo(p){const box=$("#mapinfo");if(!box)return;box.innerHTML="";
     rows.forEach(([k,v])=>{if(v==null||v===""||k==="")return;kv.appendChild(el("dt",{},k));kv.appendChild(el("dd",{},v));});
     if(kv.children.length)box.appendChild(el("div",{class:"kvgroup"},el("div",{class:"kvglabel"},label),kv));};
   grp("Ownership",[["Owner",p.owner],["Owner type",OWNER_LABELS[p.ownerClass]||p.ownerClass],
-    p.ownerClass==="private"?["Owner base",SCOPE_LABELS[p.ownerScope]||p.ownerScope]:["",null],
-    ["Owner mailing",p.ownerFull||p.ownerCity]]);
+    p.ownerClass==="private"?["Tax bill mailed to",SCOPE_LABELS[p.ownerScope]||p.ownerScope]:["",null],
+    ["Mailing address",p.ownerFull||p.ownerCity],p.ownerNote?["Audit note",p.ownerNote]:["",null]]);
   grp("Valuation",[["Total assessed",fmtMoney(p.av)],["Land assessed",p.landAv?fmtMoney(p.landAv):null]]);
   grp("Zoning & use",[["Zone (ReZone)",p.zone],["Land use",p.landUse],["Class code",p.landUseCode],p.pd?["PID plan",p.pd]:["",null]]);
   grp("Building & lot",[["Residential units",p.units?fmtInt(p.units):null],["Year built",p.year||null],
@@ -783,10 +784,11 @@ function mapStats(){
   box.appendChild(el("div",{class:"hint",style:"margin-top:6px"},"share of core assessed value · parcel count · core total "+fmtMoney(total)));
   return box;
 }
-function layerName(){return{ownerClass:"Ownership",ownerScope:"Local vs national",zone:"Zoning",av:"Assessed value",year:"Building age",landuse:"Land use",vacant:"Vacancy"}[state.mapLayer];}
+function layerName(){return{ownerClass:"Ownership",ownerScope:"Tax mailing address",zone:"Zoning",av:"Assessed value",year:"Building age",landuse:"Land use",vacant:"Vacancy"}[state.mapLayer];}
 function buildLegend(){
   const lg=el("div",{class:"legend"});
   lg.appendChild(el("div",{class:"lg-title"},layerName()));
+  if(state.mapLayer==="ownerScope")lg.appendChild(el("div",{class:"lg-note"},"Where the owner of record's tax bill is mailed. Not who controls the company: 1,755 of 1,807 entity names on the roll have no public record of their controller."));
   let items=[];
   if(state.mapLayer==="ownerClass")items=Object.keys(OWNER_COLORS).map(k=>[OWNER_COLORS[k],OWNER_LABELS[k]]);
   else if(state.mapLayer==="ownerScope")items=Object.keys(SCOPE_COLORS).map(k=>[SCOPE_COLORS[k],SCOPE_LABELS[k]]);
@@ -895,7 +897,7 @@ function renderOverview(root){
   [["implications","Implications for Collegetown","What the Syracuse precedent suggests for Cornell: "+nImp+" evidence-linked inferences.",true],
    ["framework","The university's plan","How SU planned the district and what changed — its 2017 Campus Framework and 2023 Refresh.",true],
    ["roster","Development roster","Core buildings from 2005 on: year, units, owner, assessed value — from the parcel roll."],
-   ["landlord","Ownership & landlords","Who owns the core, absentee vs. local, and the largest owners by parcels held."]].forEach(([id,t,d,lead])=>{
+   ["landlord","Ownership & landlords","Who owns the core by owner type, where each owner's tax bill is mailed, and the largest owners by parcels held."]].forEach(([id,t,d,lead])=>{
     ac.appendChild(el("div",{class:"card pad clickable",onclick:()=>go(id),style:lead?"border-color:var(--accent)":""},
       el("div",{class:"eyebrow",style:lead?"color:var(--accent)":""},lead?"Synthesis":"Real estate"),
       el("div",{style:"margin-top:6px;font-weight:650;font-size:15px"},t),
@@ -1167,9 +1169,9 @@ function renderRoster(root){
     stat(fmtInt(recent.length),"buildings (2005+)"),
     stat(fmtInt(totUnits),"residential units"),
     stat("$"+(totAv/1e6).toFixed(0)+"M","assessed value"),
-    stat(nNat+"","out-of-state–owned")));
+    stat(nNat+"","with tax bills mailed out of state")));
   const t=el("table",{class:"dtable"});
-  t.appendChild(el("thead",{},el("tr",{},th("Yr"),th("Address"),th("Owner of record"),th("Base"),
+  t.appendChild(el("thead",{},el("tr",{},th("Yr"),th("Address"),th("Owner of record"),th("Tax bill mailed to"),
     el("th",{class:"num"},"Units"),el("th",{class:"num"},"Assessed"),th("Zone"),th("Use"))));
   const tb=el("tbody",{});
   recent.forEach(p=>{
@@ -1206,7 +1208,7 @@ function renderRoster(root){
     });
   }
 }
-const OWNER_SHORT_SCOPE={local:"Local (CNY)",nyother:"NY, elsewhere",national:"Out-of-state",na:"Institutional"};
+const OWNER_SHORT_SCOPE={local:"Central New York",nyother:"New York, elsewhere",national:"Out of state",na:"Not private"};
 function ownerTagFor(p){
   if(p.ownerClass!=="private"){return el("span",{class:"tag-own",style:"background:"+OWNER_COLORS[p.ownerClass],title:OWNER_LABELS[p.ownerClass]},
     p.ownerClass==="su"?"SU":p.ownerClass==="hospital"?"HOSP":p.ownerClass==="government"?"GOV":"NP");}
@@ -1216,7 +1218,7 @@ function ownerTagFor(p){
 /* ---------- landlord / ownership analysis (from the parcel roll) ---------- */
 function renderLandlord(root){
   vhead(root,"Real estate · Ownership","Who owns the core",
-    "Ownership of the three core neighborhoods (University Hill, the University Neighborhood and Westcott — City of Syracuse neighborhood polygons), aggregated from the City of Syracuse 2025 Q3 roll by owner of record. \"Absentee\" and \"local\" are inferred from each owner's mailing city (a proxy, not a legal tenure record). Assessed value understates market value — treat shares as more reliable than dollar levels.");
+    "Ownership of the three core neighborhoods (University Hill, the University Neighborhood and Westcott, the City of Syracuse neighborhood polygons), aggregated from the City of Syracuse 2025 Q3 roll by owner of record. The local-versus-outside split is the tax mailing address of the owner of record. It is not beneficial ownership. A September 11, 2026 audit screened all 1,807 company and entity names on the roll and found a documented controller location for 52. The other 1,755 are unknown, not local. Assessed value understates market value, so treat shares as more reliable than dollar levels.");
   const feats=coreProps();
   const totAv=feats.reduce((s,p)=>s+(p.av||0),0)||1;
   // class shares
@@ -1230,7 +1232,7 @@ function renderLandlord(root){
   root.appendChild(el("div",{class:"miniglance"},
     stat((100*(byClass.su||0)/totAv).toFixed(0)+"%","SU-owned value"),
     stat((100*privAv/totAv).toFixed(0)+"%","privately owned"),
-    stat((100*absAv/privAv).toFixed(0)+"%","of private value absentee"),
+    stat((100*absAv/privAv).toFixed(0)+"%","of private value billed outside CNY"),
     stat(fmtInt(nPrivOwners),"distinct private owners")));
   // ownership-class share bar
   root.appendChild(el("div",{class:"flabel"},"Core assessed value by owner type"));
@@ -1243,7 +1245,7 @@ function renderLandlord(root){
   order.forEach(k=>{if((byClass[k]||0)<=0)return;key.appendChild(el("span",{},el("i",{style:"background:"+OWNER_COLORS[k]}),OWNER_LABELS[k]+" "+(100*(byClass[k]||0)/totAv).toFixed(1)+"%"));});
   root.appendChild(key);
   // private value: local vs national
-  root.appendChild(el("div",{class:"flabel"},"Private value — local vs. absentee"));
+  root.appendChild(el("div",{class:"flabel"},"Private value by the tax mailing address of the owner of record"));
   const scOrder=["local","nyother","national"];
   const bar2=el("div",{class:"sharebar"});
   scOrder.forEach(k=>{const v=priv.filter(p=>p.ownerScope===k).reduce((s,p)=>s+(p.av||0),0);if(v<=0)return;const pct=100*v/privAv;
@@ -1253,13 +1255,33 @@ function renderLandlord(root){
   scOrder.forEach(k=>{const v=priv.filter(p=>p.ownerScope===k).reduce((s,p)=>s+(p.av||0),0);if(v<=0)return;
     key2.appendChild(el("span",{},el("i",{style:"background:"+SCOPE_COLORS[k]}),SCOPE_LABELS[k]+" "+(100*v/privAv).toFixed(1)+"%"));});
   root.appendChild(key2);
+  // ownership audit, September 11, 2026: mailing address is not ownership
+  const ac=el("div",{class:"card pad",style:"margin:16px 0"});
+  ac.appendChild(el("h3",{class:"h",style:"margin-top:0"},"Who is behind the companies"));
+  ac.appendChild(el("div",{class:"muted",style:"font-size:12px;margin-bottom:8px"},"Ownership audit, September 11, 2026. Study record: research/04-ownership-and-investment/llc-audit-2026-09-11."));
+  ac.appendChild(el("p",{},"The colors above describe where tax bills are mailed. They do not establish who owns each company. The audit screened all 1,807 company and entity names on the roll: 1,273 LLCs, 59 abbreviated business names and 475 corporations, trusts and other entities. 52 have a dated, role-qualified location for a parent, member, manager or sponsor. 1,755 have no public record of who controls them. A local mailing address can belong to a manager, an attorney or a mailbox, so an unresolved company is unknown, not local."));
+  ac.appendChild(el("p",{},"Category corrections applied to this map and these bars: six NYS Housing Finance Agency parcels ($106.97 million assessed) moved from private to government. Abby Lane Housing Corp ($22.26 million), ESF College Foundation ($57,000) and PEACE Inc ($1.72 million, in Westcott) moved to nonprofit. Drumlins Inc ($1.5 million) and 601 South Crouse Ave LLC ($4.03 million, the Hotel Skyler) moved to Syracuse University, which identifies both as subsidiaries in its FY2025 audited statements. Outside the core, Apple 9 Hospitality and Upstate Imports Auto Repair had been tagged as hospitals by a name rule. Other classification errors may remain."));
+  ac.appendChild(el("div",{class:"flabel"},"Documented outside investment behind project companies"));
+  const at=el("table",{class:"dtable"});
+  at.appendChild(el("thead",{},el("tr",{},th("Property and company"),th("What the evidence establishes"),th("What remains uncertain"))));
+  const atb=el("tbody",{});
+  [["728 E. Genesee St, 728 EGSU LLC","A June 2023 sworn disclosure names four members based on Long Island and their percentages.","Later transfers and voting arrangements."],
+   ["The Coda, TLSP Coda LLC","The SIDA application names Timberwolf Capital Partners at 99% (Jackson, Wyoming), John Hoover III at 0.5% and Lamont Street Partners at 0.5% (Nevada and Maryland offices).","The complete current and ultimate capital structure. The application is dated evidence."],
+   ["Syracuse MOB LLC","Ventas lists the company in its year-end 2025 subsidiary disclosure. The parent is based in Chicago.","Later changes, and where the public parent's investors are based."],
+   ["GMR Syracuse LLC","A year-end 2025 SEC subsidiary disclosure links it to Chiron Real Estate, based in Maryland. A different company from Syracuse MOB.","Later changes and ultimate investor geography."],
+   ["Campus Hill, Champion Syracuse LLC","A California acquisition sponsor and the property transaction are identified.","The complete current member chain."],
+   ["Theory, The Laurel and The Standard","Project announcements identify outside sponsors or partners, including Blue Vista and Korean institutional partners in Theory's recapitalization.","Exact current parcel-company ownership. Capital announcements do not name every LLC member."]
+  ].forEach(r=>atb.appendChild(el("tr",{},td(r[0]),td(r[1]),td(r[2]))));
+  at.appendChild(atb);ac.appendChild(el("div",{class:"tablewrap"},at));
+  ac.appendChild(el("p",{class:"muted",style:"font-size:12px;margin-bottom:0"},"Local operations do not necessarily mean wholly local money. HS Property Funds names Daniel Sisto as owner and describes raising investment capital without locating every investor. Manager, member, sponsor and investor are separate roles. A local tax address with an outside filing contact (Continental One, Jerold Allred, Oak Water Homes) is a lead, not proof, and those owners were not relabeled."));
+  root.appendChild(ac);
   // largest owners table
   root.appendChild(el("h3",{class:"h"},"Largest owners in the core"));
   root.appendChild(el("div",{class:"sublabel"},"by number of parcels held · top 25"));
   const rows=Object.entries(owners).filter(([k])=>k!=="—").sort((a,b)=>b[1].n-a[1].n||b[1].av-a[1].av).slice(0,25);
   const maxN=rows.length?rows[0][1].n:1;
   const t=el("table",{class:"dtable"});
-  t.appendChild(el("thead",{},el("tr",{},th("Owner of record"),th("Type"),th("Base"),
+  t.appendChild(el("thead",{},el("tr",{},th("Owner of record"),th("Type"),th("Tax bill mailed to"),
     el("th",{class:"num"},"Parcels"),th(""),el("th",{class:"num"},"Units"),el("th",{class:"num"},"Assessed"))));
   const tb=el("tbody",{});
   rows.forEach(([name,o])=>{
