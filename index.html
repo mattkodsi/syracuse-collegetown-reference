@@ -470,20 +470,21 @@ const ZONE_COLORS={R1:"#c7e9b4",R2:"#a1d99b",R3:"#74c476",R4:"#41ab5d",R5:"#238b
   PID:"#6a51a3",OS:"#9ecae1",IN:"#c6c6f0",CM:"#dd3497",PDD:"#807dba",Pending:"#d9d9d9"};
 const OWNER_COLORS={su:"#e6550d",hospital:"#3182bd",government:"#756bb1",nonprofit:"#31a354",private:"#c7ccd1"};
 const OWNER_LABELS={su:"Syracuse University",hospital:"Hospital / medical",government:"Government / public",nonprofit:"Church / nonprofit",private:"Private owner"};
-const SCOPE_COLORS={national:"#d73027",nyother:"#fc8d59",local:"#91bfdb",na:"#e5e7eb",unknown:"#c7ccd1"};
+const SCOPE_COLORS={local:"#b4bac2",nyother:"#6b7480",national:"#1f2328",na:"#eeeff1",unknown:"#ffffff"};
 const SCOPE_LABELS={national:"Tax bill mailed out of state",nyother:"Tax bill mailed elsewhere in New York",local:"Tax bill mailed to Central New York",na:"Not private (SU, hospital, government, nonprofit)",unknown:"Mailing address not parsed"};
-const LU_COLORS={residential:"#a1d99b",multifamily:"#238b45",university:"#6a51a3",commercial:"#fd8d3c",
-  institutional:"#3182bd",parking:"#969696",vacant:"#d73027",other:"#d9d9d9"};
+const LU_COLORS={residential:"#fee391",multifamily:"#e6b422",university:"#e6550d",commercial:"#b2182b",
+  institutional:"#3182bd",openspace:"#31a354",parking:"#969696",vacant:"#8c510a",other:"#d9d9d9"};
 const LU_LABELS={residential:"1–2 family residential",multifamily:"Apartments / multi-family",university:"College / university",
-  commercial:"Commercial",institutional:"Institutional (school/church/hospital)",parking:"Parking",vacant:"Vacant",other:"Other"};
+  commercial:"Commercial",institutional:"Institutional (school/church/hospital)",openspace:"Parks, playgrounds, cemeteries",parking:"Parking",vacant:"Vacant",other:"Other"};
 function luGroup(lu){lu=(lu||"").toLowerCase();
   if(/vacant/.test(lu))return"vacant";
   if(/college|univ/.test(lu))return"university";
   if(/apart|apt|3 fam|three fam|multiple res|converted|row/.test(lu))return"multifamily";
   if(/1 fam|one fam|2 fam|two fam|single|res\b|residence|home/.test(lu))return"residential";
   if(/comm|retail|store|office|restaurant|bank|hotel|bar\b/.test(lu))return"commercial";
+  if(/municpl park|playground|cemetery/.test(lu))return"openspace";
   if(/park/.test(lu))return"parking";
-  if(/school|church|hosp|govern|public|relig|educ|cemetery|library|museum/.test(lu))return"institutional";
+  if(/school|church|hosp|govern|public|relig|educ|library|museum/.test(lu))return"institutional";
   return"other";}
 const YEAR_LEGEND=[["#99000d","before 1900"],["#cb181d","1900–1940"],["#fb6a4a","1940–1970"],["#fcae91","1970–2000"],["#fee5d9","2000 or later"]];
 function yearColor(y){if(!y)return"#e5e7eb";if(y<1900)return"#99000d";if(y<1940)return"#cb181d";if(y<1970)return"#fb6a4a";if(y<2000)return"#fcae91";return"#fee5d9";}
